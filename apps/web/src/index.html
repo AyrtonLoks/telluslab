@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Organize seu estudo, pratique matemática e acompanhe sua proficiência.">
+  <meta name="theme-color" content="#f7f7f1">
+  <title>TellusLab · Matemática</title>
+  <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./vendor/katex/katex.min.css">
+  <script type="module" src="./app.mjs"></script>
+</head>
+<body>
+  <a href="#main" class="skip">Ir para o conteúdo</a>
+  <div id="shell" class="shell">
+    <aside id="sidebar" class="sidebar" aria-label="Navegação"></aside>
+    <div class="screen">
+      <header id="bar" class="topbar"></header>
+      <main id="main" tabindex="-1"><p class="loading">Carregando seu laboratório…</p></main>
+    </div>
+  </div>
+  <dialog id="dialog"></dialog>
+  <div id="toast" role="status" class="toast" hidden></div>
+  <noscript>Ative JavaScript para abrir o laboratório e salvar seu progresso.</noscript>
+</body>
+</html>

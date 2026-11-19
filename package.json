@@ -1,0 +1,18 @@
+{
+  "name": "telluslab",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "build": "node scripts/build.mjs",
+    "start": "npm run build && node serve.mjs",
+    "test": "npm run build && node --test",
+    "verify:git": "node scripts/verify-git-index.mjs"
+  },
+  "dependencies": {
+    "katex": "0.16.21"
+  }
+}

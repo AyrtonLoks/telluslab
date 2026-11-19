@@ -1,0 +1,1340 @@
+# ESPECIFICAÇÃO DE DOMÍNIO E REQUISITOS: SISTEMA DE ESTUDO E PRÁTICA DE MATEMÁTICA
+# 1. ARQUITETURA PEDAGÓGICA E REQUISITOS DO SISTEMA (SRS)
+## 1.1. Modelagem de Trilhas de Conhecimento (DAG)
+O currículo não é linear; após a base elementar e lógica, divide-se em um Grafo Acíclico Dirigido (DAG) com quatro trilhas paralelas:
+- TRL-00 (Base Transversal): Matemática Elementar e Lógica/Demonstrações (Níveis 1 e 2).
+- TRL-01 (Contínua e Analítica): Cálculo em ℝ e ℝⁿ → Análise na Reta → Espaços Métricos → Análise no ℝⁿ (Níveis 5 e 9).
+- TRL-02 (Algébrica e Geométrica): Geometria Analítica Vetorial → Álgebra Linear → Cálculo Numérico Matricial (Níveis 3 e 6).
+- TRL-03 (Discreta e Algorítmica): Matemática Discreta → Algoritmos Seminuméricos → Matemática Concreta → Combinatória Analítica e TAOCP (Níveis 4, 6 e 8).
+- TRL-04 (Estocástica e Quantitativa): Estatística Descritiva → Probabilidade → Inferência Estatística Moderna e Finanças Quantitativas (Nível 7).
+## 1.2. Máquina de Estados Finita (FSM) de Proficiência por Macrotema
+Cada Macrotema (X.Y) possui um estado de ciclo de vida controlado pelas seguintes transições:
+- S0 — BLOQUEADO: Pelo menos um macrotema listado em Pré-requisitos Diretos ainda não atingiu o estado S4 (PROVA_VALIDADA).
+- S1 — DISPONIVEL: Todos os pré-requisitos diretos atingiram S4 ou superior; pronto para iniciar estudo.
+- S2 — TEORIA_CONCLUIDA: Leitura ativa e fichamento das definições, proposições e exemplos concluídos nas obras de referência.
+- S3 — FIXACAO_MECANICA: Resolução mínima de exercícios computacionais/algébricos concluída com taxa de acerto ≥ 80%.
+- S4 — PROVA_VALIDADA (Estado de Desbloqueio): Teoremas obrigatórios demonstrados sem consulta e Problema-Marco (Capstone) aprovado. Libera nós dependentes no DAG e insere o macrotema no motor de repetição espaçada.
+- S5 — REVISAO_EM_DIA: Em ciclo ativo de manutenção via algoritmo de repetição espaçada.
+- S6 — REVISAO_VENCIDA: Intervalo de retenção expirado; exige sessão de revisão antes de avançar em nós filhos.
+## 1.3. Taxonomia de Modalidades de Estudo e Papéis Bibliográficos
+- Papéis da Bibliografia:
+- [Intuição/Cálculo]: Foco em visualização geométrica, modelagem e fluência operatória.
+- [Rigor/Prova]: Foco em construção axiomática, demonstrações formais e casos de borda.
+- [Algorítmica]: Foco em análise de complexidade, estruturas de dados e implementação exata.
+- [Aplicação/Referência]: Foco em métodos numéricos, estatísticos ou quantitativos aplicados.
+- Modalidades de Prática Exigidas por Macrotema:
+- [Cálculo/Algébrico]: Manipulação simbólica, resolução de integrais, sistemas, probabilidades e cálculos analíticos.
+- [Demonstração Formal]: Redação rigorosa de provas matemáticas (direta, contrapositiva, absurdo, indução, ε-δ).
+- [Implementação Computacional]: Codificação de algoritmos numéricos, simulações estocásticas, geradores combinatórios ou estruturas de dados.
+## 1.4. Requisitos Funcionais (RF) da Aplicação
+- RF-01 (Grafo Curricular e Caminho Crítico): Renderizar o DAG interativo dos 70 macrotemas. Permitir que o usuário selecione qualquer macrotema ou livro-alvo (ex.: BIB-19 ou BIB-36) para calcular via ordenação topológica o subgrafo mínimo de pré-requisitos pendentes.
+- RF-02 (Motor de Repetição Espaçada — SRS): Implementar algoritmo FSRS (ou SM-2) acoplado aos subtemas e teoremas obrigatórios de macrotemas em estado S4+. Os cartões devem testar: (a) enunciados e hipóteses de teoremas, (b) contraexemplos clássicos quando uma hipótese falha, e (c) ideias-chave de demonstrações.
+- RF-03 (Gerador de Sessões Intercaladas — Interleaving): Montar sessões diárias balanceadas contendo: 50% avanço em macrotema ativo (S1–S3), 30% revisão vencida (S6) de trilhas distintas, e 20% resolução de problemas mistos sem identificação prévia do método.
+- RF-04 (Validador Socrático de Demonstrações): Disponibilizar editor de provas em LaTeX onde a IA atua como revisor rigoroso: verifica estrutura lógica, quantificadores, casos de borda e citações de teoremas anteriores, apontando saltos lógicos com perguntas-guia sem entregar a prova pronta.
+- RF-05 (Diagnóstico Regressivo de Lacunas): Ao registrar erro recorrente em um macrotema (ex.: 5.13), o sistema percorre as arestas reversas do DAG (1.9, 3.10, 5.5) para sugerir micro-revisões direcionadas nos pré-requisitos.
+- RF-06 (Sandbox de Implementação e Simulação): Para macrotemas com tag [Implementação Computacional], gerar especificações de problemas de código (em Python, Rust ou Go) com casos de teste unitários para validar algoritmos numéricos, combinatórios e simulações de Monte Carlo.
+- RF-07 (Métricas Ponderadas de Progresso): Calcular progresso global, por trilha (TRL-00 a TRL-04) e por obra (BIB-01 a BIB-40), ponderado pelo atributo Complexidade (1–5) de cada macrotema.
+## 1.5. Requisitos Não-Funcionais (RNF) e Modelo de Dados
+- RNF-01 (Renderização Matemática): Suporte nativo a LaTeX via KaTeX/MathJax em toda a interface (subtemas, enunciados, flashcards, editor de provas e feedback da IA).
+- RNF-02 (Persistência Local-First e Portabilidade): Banco de dados relacional (SQLite/PostgreSQL) inicializado via seed estruturado a partir das Seções 2 e 3 deste documento, com exportação/importação completa de progresso em JSON.
+- RNF-03 (Esquema de Entidades Principais): Obra(id, titulo, autores, categoria) | Macrotema(id, nivel, trilha, titulo, complexidade, estado_fsm) | Dependencia(macrotema_id, prerequisito_id) | BibliografiaMacrotema(macrotema_id, obra_id, papel, capitulos) | Subtema(id, macrotema_id, descricao, concluido) | CriterioAceite(id, macrotema_id, tipo, descricao, validado) | CardSRS(id, macrotema_id, frente_latex, verso_latex, estabilidade, dificuldade, proxima_revisao).
+# 2. CATÁLOGO BIBLIOGRÁFICO (ACERVO BASE)
+## 2.1. Matemática Elementar (Coleção Gelson Iezzi et al. - Fundamentos de Matemática Elementar)
+- BIB-01: Fundamentos de Matemática Elementar, Vol. 1: Conjuntos e Funções — Gelson Iezzi, Carlos Murakami
+- BIB-02: Fundamentos de Matemática Elementar, Vol. 2: Logaritmos — Gelson Iezzi, Osvaldo Dolce, Carlos Murakami
+- BIB-03: Fundamentos de Matemática Elementar, Vol. 3: Trigonometria — Gelson Iezzi
+- BIB-04: Fundamentos de Matemática Elementar, Vol. 4: Sequências, Matrizes, Determinantes e Sistemas — Gelson Iezzi, Samuel Hazzan
+- BIB-05: Fundamentos de Matemática Elementar, Vol. 5: Combinatória e Probabilidade — Samuel Hazzan
+- BIB-06: Fundamentos de Matemática Elementar, Vol. 6: Complexos, Polinômios e Equações — Gelson Iezzi
+- BIB-07: Fundamentos de Matemática Elementar, Vol. 7: Geometria Analítica — Gelson Iezzi
+- BIB-08: Fundamentos de Matemática Elementar, Vol. 8: Limites, Derivadas e Noções de Integral — Gelson Iezzi, Carlos Murakami, Nilson José Machado
+- BIB-09: Fundamentos de Matemática Elementar, Vol. 9: Geometria Plana — Osvaldo Dolce, José Nicolau Pompeo
+- BIB-10: Fundamentos de Matemática Elementar, Vol. 10: Geometria Espacial (Posição e Métrica) — Osvaldo Dolce, José Nicolau Pompeo
+- BIB-11: Fundamentos de Matemática Elementar, Vol. 11: Matemática Comercial, Matemática Financeira e Estatística Descritiva — Samuel Hazzan, José Nicolau Pompeo
+## 2.2. Lógica, Linguagem Matemática e Demonstrações
+- BIB-12: Um Convite à Matemática — Daniel Cordeiro de Morais Filho
+- BIB-13: How to Prove It: A Structured Approach (3ª Edição) — Daniel J. Velleman
+- BIB-14: Proofs: A Long-Form Mathematics Textbook — Jay Cummings
+## 2.3. Geometria Analítica Vetorial e Álgebra Linear
+- BIB-15: Vetores e Geometria Analítica (2ª Edição) — Paulo Winterle
+- BIB-16: Álgebra Linear com Aplicações (10ª Edição) — Howard Anton, Chris Rorres
+## 2.4. Matemática Discreta, Concreta e Combinatória Algorítmica
+- BIB-17: Discrete Mathematics and Its Applications (8ª Edição) — Kenneth H. Rosen
+- BIB-18: Concrete Mathematics: A Foundation for Computer Science (2ª Edição) — Ronald L. Graham, Donald E. Knuth, Oren Patashnik
+- BIB-19: Analytic Combinatorics — Philippe Flajolet, Robert Sedgewick
+- BIB-20: The Art of Computer Programming, Vol. 1: Fundamental Algorithms (3ª Edição) — Donald E. Knuth
+- BIB-21: The Art of Computer Programming, Vol. 2: Seminumerical Algorithms (3ª Edição) — Donald E. Knuth
+- BIB-22: The Art of Computer Programming, Vol. 3: Sorting and Searching (2ª Edição) — Donald E. Knuth
+- BIB-23: The Art of Computer Programming, Vol. 4A: Combinatorial Algorithms, Part 1 — Donald E. Knuth
+- BIB-24: The Art of Computer Programming, Vol. 4B: Combinatorial Algorithms, Part 2 — Donald E. Knuth
+## 2.5. Cálculo Diferencial, Integral e Numérico
+- BIB-25: Cálculo, Vol. 1 — James Stewart
+- BIB-26: Cálculo, Vol. 2 — James Stewart
+- BIB-27: Um Curso de Cálculo, Vol. 1 (6ª Edição) — Hamilton Luiz Guidorizzi
+- BIB-28: Um Curso de Cálculo, Vol. 2 (6ª Edição) — Hamilton Luiz Guidorizzi
+- BIB-29: Um Curso de Cálculo, Vol. 3 (6ª Edição) — Hamilton Luiz Guidorizzi
+- BIB-30: Um Curso de Cálculo, Vol. 4 (6ª Edição) — Hamilton Luiz Guidorizzi
+- BIB-31: Cálculo Numérico Aplicado — José Viriato Coelho Vargas, Lucas K. Araki
+## 2.6. Probabilidade, Estatística e Finanças Quantitativas
+- BIB-32: Estatística Básica — Wilton de O. Bussab, Pedro A. Morettin
+- BIB-33: Probabilidade: Aplicações à Estatística — Paul L. Meyer
+- BIB-34: Probabilidade: Um Curso Moderno com Aplicações — Sheldon Ross
+- BIB-35: All of Statistics: A Concise Course in Statistical Inference — Larry Wasserman
+- BIB-36: The Handbook of Fixed Income Securities (9ª Edição) — Frank J. Fabozzi
+## 2.7. Análise Real e Topologia de Espaços Métricos
+- BIB-37: Real Analysis: A Long-Form Mathematics Textbook — Jay Cummings
+- BIB-38: Curso de Análise, Vol. 1 — Elon Lages Lima
+- BIB-39: Espaços Métricos — Elon Lages Lima
+- BIB-40: Curso de Análise, Vol. 2 — Elon Lages Lima
+# 3. TAXONOMIA GRANULAR DE MACROTEMAS, METADADOS E CRITÉRIOS DE ACEITE
+## NÍVEL 1: FUNDAMENTOS DA MATEMÁTICA ELEMENTAR
+### Macrotema 1.1: Noções de Lógica e Teoria Elementar dos Conjuntos
+- Trilha: TRL-00 | Complexidade: 1/5 | Pré-requisitos Diretos: Nenhum
+- Modalidades de Prática: [Cálculo/Algébrico]
+- Bibliografia e Capítulos: BIB-01 [Intuição/Cálculo] (Caps. I–III)
+- Subtemas:
+- Proposições, conectivos lógicos e tabelas-verdade
+- Quantificadores universal e existencial básicos
+- Relação de pertinência e inclusão de conjuntos
+- Operações entre conjuntos: união, interseção, diferença e complementar
+- Conjuntos numéricos (ℕ, ℤ, ℚ, ℝ) e intervalos reais
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Leis de De Morgan para conjuntos, propriedades distributivas de união/interseção e representação algébrica/geométrica de intervalos.
+- Problema-Marco: Resolver problemas de contagem de elementos em 3 conjuntos com interseções parciais e operar intervalos reais envolvendo diferenças e complementares.
+### Macrotema 1.2: Relações e Conceito Geral de Função
+- Trilha: TRL-00 | Complexidade: 2/5 | Pré-requisitos Diretos: 1.1
+- Modalidades de Prática: [Cálculo/Algébrico]
+- Bibliografia e Capítulos: BIB-01 [Intuição/Cálculo] (Caps. IV, V, XI)
+- Subtemas:
+- Par ordenado, produto cartesiano e relação binária
+- Domínio, contradomínio, imagem e representação gráfica
+- Tipologia de funções: injetora, sobrejetora e bijetora
+- Paridade de funções (pares e ímpares) e funções monótonas
+- Composição de funções e função inversa
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Critério de existência da função inversa (bijeção) e simetria gráfica entre f e f⁻¹ em relação à bissetriz y = x.
+- Problema-Marco: Determinar domínio máximo de funções compostas com restrições algébricas e obter a lei e o domínio da inversa de funções racionais bijetoras.
+### Macrotema 1.3: Funções Algébricas Elementares (Afim, Quadrática e Modular)
+- Trilha: TRL-00 | Complexidade: 2/5 | Pré-requisitos Diretos: 1.2
+- Modalidades de Prática: [Cálculo/Algébrico]
+- Bibliografia e Capítulos: BIB-01 [Intuição/Cálculo] (Caps. VI–X)
+- Subtemas:
+- Função afim: taxa de variação, coeficientes, zeros e estudo de sinal
+- Função quadrática: raízes, discriminante, vértice da parábola, imagem e máximo/mínimo
+- Inequações de 1º e 2º graus, inequações-produto e inequações-quociente
+- Valor absoluto (módulo), função modular, equações e inequações modulares
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Forma canônica da função quadrática por completamento de quadrados e desigualdade triangular modular |a + b| ≤ |a| + |b|.
+- Problema-Marco: Resolver inequações-quociente simultâneas com termos quadráticos e modulares usando quadro de sinais.
+### Macrotema 1.4: Potenciação, Radiciação, Funções Exponenciais e Logarítmicas
+- Trilha: TRL-00 | Complexidade: 2/5 | Pré-requisitos Diretos: 1.3
+- Modalidades de Prática: [Cálculo/Algébrico]
+- Bibliografia e Capítulos: BIB-02 [Intuição/Cálculo] (Caps. I–VII)
+- Subtemas:
+- Propriedades de potências e radicais nos reais
+- Função exponencial: gráfico, propriedades, equações e inequações exponenciais
+- Definição de logaritmo, consequências da definição e propriedades operatórias
+- Mudança de base logarítmica
+- Função logarítmica: gráfico, domínio, equações e inequações logarítmicas
+- Logaritmos decimais: característica e mantissa
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Propriedades operatórias do logaritmo (produto, quociente, potência), fórmula de mudança de base e condições de existência de log_b(a).
+- Problema-Marco: Resolver sistemas e inequações logarítmicas com bases variáveis (0 < b < 1 e b > 1) verificando estritamente as condições de existência.
+### Macrotema 1.5: Trigonometria no Triângulo e no Ciclo
+- Trilha: TRL-00 | Complexidade: 3/5 | Pré-requisitos Diretos: 1.2, 1.6
+- Modalidades de Prática: [Cálculo/Algébrico]
+- Bibliografia e Capítulos: BIB-03 [Intuição/Cálculo] (Caps. I–XII)
+- Subtemas:
+- Razões trigonométricas no triângulo retângulo
+- Resolução de triângulos quaisquer: Lei dos Senos e Lei dos Cossenos
+- Arcos e ângulos (graus e radianos) e ciclo trigonométrico
+- Funções circulares (seno, cosseno, tangente, cotangente, secante, cossecante)
+- Relações fundamentais, identidades trigonométricas e redução ao 1º quadrante
+- Fórmulas de adição, subtração, arco duplo, arco metade e transformação em produto (Prostaférese)
+- Equações e inequações trigonométricas
+- Funções trigonométricas inversas (arcsen, arccos, arctan)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Relação fundamental sen²x + cos²x = 1, fórmulas de sen(a ± b) e cos(a ± b), Lei dos Senos e Lei dos Cossenos.
+- Problema-Marco: Demonstrar identidades trigonométricas usando prostaférese e resolver equações trigonométricas gerais no intervalo [0, 2π) e em ℝ.
+### Macrotema 1.6: Geometria Plana Euclidiana
+- Trilha: TRL-00 | Complexidade: 3/5 | Pré-requisitos Diretos: 1.1
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-09 [Intuição/Cálculo] (Caps. I–XIX)
+- Subtemas:
+- Conceitos primitivos, postulados de Euclides, ângulos e paralelismo
+- Congruência de triângulos e desigualdade triangular
+- Pontos notáveis do triângulo: baricentro, incentro, circuncentro e ortocentro
+- Quadriláteros notáveis: trapézio, paralelogramo, retângulo, losango e quadrado
+- Teorema de Tales, teorema das bissetrizes e semelhança de triângulos
+- Relações métricas no triângulo retângulo e em triângulos quaisquer
+- Circunferência e círculo: cordas, tangentes, ângulos inscritos, excêntricos e potência de ponto
+- Polígonos regulares inscritos e circunscritos
+- Comprimento da circunferência e áreas de figuras planas
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Teorema de Tales, Teorema de Pitágoras, Teorema do Ângulo Inscrito, Potência de Ponto e Fórmula de Heron.
+- Problema-Marco: Resolver problemas geométricos compostos envolvendo semelhança de triângulos, potência de ponto e cálculo de áreas hachuradas em circunferências inscritas/circunscritas.
+### Macrotema 1.7: Sequências, Progressões, Matrizes, Determinantes e Sistemas Elementares
+- Trilha: TRL-00 | Complexidade: 2/5 | Pré-requisitos Diretos: 1.3
+- Modalidades de Prática: [Cálculo/Algébrico]
+- Bibliografia e Capítulos: BIB-04 [Intuição/Cálculo] (Caps. I–VI)
+- Subtemas:
+- Sequências numéricas e leis de formação por recorrência
+- Progressão Aritmética (PA): termo geral, interpolação, propriedades e soma dos termos
+- Progressão Geométrica (PG): termo geral, interpolação, produto, soma finita e série geométrica infinita
+- Matrizes: tipos especiais, adição, multiplicação por escalar, multiplicação matricial e matriz transposta
+- Determinantes de 2ª e 3ª ordem (Regra de Sarrus)
+- Menor complementar, cofator, Teorema de Laplace, Regra de Chió e propriedades dos determinantes
+- Matriz inversa elementar
+- Sistemas lineares: Regra de Cramer, escalonamento e discussão de sistemas (SPD, SPI, SI)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Soma da PA finita, soma da PG infinita (|q| < 1), Teorema de Binet det(AB) = det(A)det(B) e Teorema de Laplace.
+- Problema-Marco: Discutir um sistema linear 3×3 parametrizado determinando os valores do parâmetro para SPD, SPI e SI.
+### Macrotema 1.8: Combinatória Elementar, Binômio de Newton e Probabilidade Finita
+- Trilha: TRL-00 | Complexidade: 2/5 | Pré-requisitos Diretos: 1.1, 1.7
+- Modalidades de Prática: [Cálculo/Algébrico]
+- Bibliografia e Capítulos: BIB-05 [Intuição/Cálculo] (Caps. I–III); BIB-17 [Rigor/Prova] (Cap. 6)
+- Subtemas:
+- Princípio Fundamental da Contagem (aditivo e multiplicativo) e fatorial
+- Permutações simples, permutações circulares e permutações com elementos repetidos
+- Arranjos simples e combinações simples
+- Combinações completas (soluções inteiras não-negativas de equações lineares)
+- Números binomiais, relação de Stifel e Triângulo de Pascal
+- Binômio de Newton: expansão, termo geral e polinômio de Leibniz
+- Espaço amostral finito equiprovável, eventos, probabilidade da união, probabilidade condicional, independência e distribuição binomial
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Relação de Stifel C(n, k) + C(n, k+1) = C(n+1, k+1), termo geral do Binômio de Newton e regra da multiplicação de probabilidades.
+- Problema-Marco: Calcular o número de soluções inteiras de equações lineares com restrições mínimas e máximas e determinar probabilidades condicionais em experimentos sem reposição.
+### Macrotema 1.9: Números Complexos, Polinômios e Equações Algébricas
+- Trilha: TRL-00 | Complexidade: 3/5 | Pré-requisitos Diretos: 1.5, 1.7
+- Modalidades de Prática: [Cálculo/Algébrico]
+- Bibliografia e Capítulos: BIB-06 [Intuição/Cálculo] (Caps. I–III)
+- Subtemas:
+- Corpo dos números complexos: unidade imaginária, forma algébrica (a + bi) e conjugado
+- Plano de Argand-Gauss: afixo, módulo, argumento e forma trigonométrica (polar)
+- Operações na forma polar e 1ª e 2ª Fórmulas de De Moivre (potenciação e raízes n-ésimas)
+- Polinômios: grau, identidade polinomial, divisão euclidiana e dispositivo de Briot-Ruffini
+- Teorema do Resto, Teorema de D'Alembert e divisibilidade por (x - a)
+- Equações algébricas: Teorema Fundamental da Álgebra, decomposição em fatores lineares e multiplicidade de raízes
+- Relações de Girard, pesquisa de raízes racionais e teorema das raízes complexas conjugadas
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Fórmulas de De Moivre, Teorema do Resto, Teorema de D'Alembert, Relações de Girard e Teorema das Raízes Complexas Conjugadas.
+- Problema-Marco: Encontrar todas as raízes complexas de um polinômio de grau 4 ou 5 com coeficientes reais usando pesquisa de raízes racionais, Briot-Ruffini e De Moivre.
+### Macrotema 1.10: Geometria Analítica Plana
+- Trilha: TRL-00 | Complexidade: 2/5 | Pré-requisitos Diretos: 1.3, 1.5, 1.6, 1.7
+- Modalidades de Prática: [Cálculo/Algébrico]
+- Bibliografia e Capítulos: BIB-07 [Intuição/Cálculo] (Caps. I–VIII)
+- Subtemas:
+- Sistema cartesiano ortogonal no plano, distância entre dois pontos, ponto médio e razão de secção
+- Condição de alinhamento de três pontos e área de triângulo/polígono via determinante
+- Estudo da reta: equações geral, reduzida, segmentária e paramétrica
+- Interseção de retas, paralelismo, perpendicularidade, feixe de retas, ângulo entre retas e distância de ponto a reta
+- Inequações lineares no plano e regiões planas
+- Equação reduzida e geral da circunferência, posições relativas (ponto-circunferência, reta-circunferência, entre duas circunferências)
+- Cônicas no plano: elipse, hipérbole e parábola (focos, excentricidade, diretrizes, assíntotas, translação e rotação de eixos)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Fórmula da distância de ponto a reta, condição de tangência reta-circunferência e equações reduzidas/propriedades focais das três cônicas.
+- Problema-Marco: Identificar uma cônica a partir de sua equação geral de 2º grau, determinar seus focos, vértices, excentricidade e retas tangentes.
+### Macrotema 1.11: Geometria Espacial de Posição e Métrica
+- Trilha: TRL-00 | Complexidade: 2/5 | Pré-requisitos Diretos: 1.5, 1.6
+- Modalidades de Prática: [Cálculo/Algébrico]
+- Bibliografia e Capítulos: BIB-10 [Intuição/Cálculo] (Caps. I–XVI)
+- Subtemas:
+- Postulados de determinação de retas e planos no espaço
+- Posições relativas entre duas retas, reta e plano, e dois planos
+- Paralelismo e perpendicularidade no espaço, projeção ortogonal, distâncias e ângulos espaciais
+- Diedros, triedros e ângulos poliédricos
+- Poliedros convexos, Relação de Euler (V - A + F = 2) e Poliedros de Platão
+- Prismas e pirâmides: áreas e volumes (Princípio de Cavalieri)
+- Cilindro, cone e esfera: áreas, volumes e partes da esfera (fuso, cunha, calota, zona)
+- Troncos de pirâmide e de cone, inscrição e circunscrição de sólidos
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Teorema das Três Perpendiculares, Relação de Euler para poliedros convexos, Princípio de Cavalieri e fórmulas de volume/área da esfera e troncos.
+- Problema-Marco: Calcular volumes e áreas totais de sólidos inscritos/circunscritos (ex.: esfera inscrita em cone reto ou tronco de pirâmide regular).
+### Macrotema 1.12: Matemática Financeira e Estatística Descritiva Elementar
+- Trilha: TRL-00 | Complexidade: 1/5 | Pré-requisitos Diretos: 1.4, 1.7
+- Modalidades de Prática: [Cálculo/Algébrico]
+- Bibliografia e Capítulos: BIB-11 [Intuição/Cálculo] (Caps. I–VI)
+- Subtemas:
+- Razões, proporções, grandezas proporcionais, divisão proporcional e regra de três simples/composta
+- Porcentagem, acréscimos/descontos sucessivos e operações sobre mercadorias
+- Juros simples e descontos simples (comercial, racional e bancário)
+- Juros compostos, taxas equivalentes, taxas nominais e efetivas
+- Descontos compostos e equivalência de capitais a juros compostos
+- Rendas certas (anuidades) e sistemas básicos de amortização (Tabela Price e SAC)
+- Tabelas de frequência, gráficos básicos, média aritmética, média ponderada, mediana, moda, variância e desvio-padrão elementar
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Equação de equivalência de capitais a juros compostos e fator de valor atual de série uniforme de pagamentos.
+- Problema-Marco: Montar planilhas de amortização nos sistemas SAC e Price e calcular taxas internas de equivalência em fluxos de caixa compostos.
+## NÍVEL 2: LÓGICA, LINGUAGEM MATEMÁTICA E DEMONSTRAÇÕES
+### Macrotema 2.1: A Gramática e a Estrutura da Matemática
+- Trilha: TRL-00 | Complexidade: 1/5 | Pré-requisitos Diretos: 1.1
+- Modalidades de Prática: [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-12 [Rigor/Prova] (Caps. 1–4); BIB-14 [Intuição/Cálculo] (Cap. 1)
+- Subtemas:
+- Distinção formal entre axioma, postulado, definição, lema, proposição, teorema, corolário e conjectura
+- Convenções de escrita matemática, uso de símbolos e clareza na redação de provas
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Estrutura lógica hipótese-tese de um teorema e diferença estrutural entre definição ("se e somente se" implícito) e proposição.
+- Problema-Marco: Reescrever afirmações matemáticas informais identificando explicitamente suas hipóteses, tese, variáveis e definições subjacentes.
+### Macrotema 2.2: Lógica Proposicional e Lógica de Predicados
+- Trilha: TRL-00 | Complexidade: 2/5 | Pré-requisitos Diretos: 2.1
+- Modalidades de Prática: [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-12 [Rigor/Prova] (Caps. 5–7); BIB-13 [Rigor/Prova] (Caps. 1–2); BIB-14 [Intuição/Cálculo] (Cap. 5); BIB-17 [Algorítmica] (Cap. 1)
+- Subtemas:
+- Conectivos lógicos formais (¬, ∧, ∨, →, ↔), tautologias e contradições
+- Equivalências lógicas fundamentais (Leis de De Morgan, condicional como disjunção, contrapositiva)
+- Regras de inferência (Modus Ponens, Modus Tollens, Silogismo Hipotético, Silogismo Disjuntivo)
+- Variáveis livres e variáveis ligadas, universo de discurso e predicados
+- Quantificadores universal (∀), existencial (∃) e existencial único (∃!)
+- Ordem de múltiplos quantificadores aninhados e regras formais de negação de sentenças quantificadas
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Equivalência P → Q ≡ ¬Q → ¬P ≡ ¬P ∨ Q, não-comutatividade de ∀x ∃y vs. ∃y ∀x, e negação de quantificadores aninhados.
+- Problema-Marco: Traduzir definições analíticas (como continuidade uniforme e convergência de Cauchy) para lógica simbólica pura e negar formalmente cada uma delas.
+### Macrotema 2.3: Técnicas Estruturadas de Demonstração
+- Trilha: TRL-00 | Complexidade: 3/5 | Pré-requisitos Diretos: 2.2
+- Modalidades de Prática: [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-12 [Rigor/Prova] (Caps. 8–12); BIB-13 [Rigor/Prova] (Cap. 3); BIB-14 [Intuição/Cálculo] (Caps. 2, 6, 7)
+- Subtemas:
+- Demonstração direta de implicações (P → Q)
+- Demonstração por contraposição (¬Q → ¬P)
+- Demonstração por redução ao absurdo (contradição)
+- Demonstração de equivalências bicondicionais (P ↔ Q) e cadeias de equivalências
+- Provas por divisão em casos e exaustão
+- Provas de existência (construtivas vs. não-construtivas) e provas de unicidade
+- Refutação de afirmações universais por contraexemplo
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Irracionalidade de √2 (absurdo), infinitude dos números primos de Euclides (absurdo) e prova não-construtiva da existência de irracionais a, b tais que a^b ∈ ℚ.
+- Problema-Marco: Redigir demonstrações completas para 5 proposições distintas exigindo obrigatoriamente prova direta, contrapositiva, redução ao absurdo, divisão em casos e existência/unicidade.
+### Macrotema 2.4: Teoria dos Conjuntos Sob Rigor Lógico
+- Trilha: TRL-00 | Complexidade: 2/5 | Pré-requisitos Diretos: 2.3
+- Modalidades de Prática: [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-12 [Rigor/Prova] (Cap. 13); BIB-13 [Rigor/Prova] (Caps. 1.3–1.4, 2.3); BIB-14 [Intuição/Cálculo] (Cap. 3); BIB-17 [Algorítmica] (Cap. 2.1–2.2)
+- Subtemas:
+- Axioma da Extensionalidade e especificação de conjuntos por compreensão
+- Conjunto das partes P(A) (conjunto potência)
+- Famílias indexadas de conjuntos, uniões arbitrárias e interseções arbitrárias
+- Demonstrações formais de inclusão (A ⊆ B) e igualdade de conjuntos (A = B)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Método da dupla inclusão (A = B ⇔ A ⊆ B ∧ B ⊆ A) e Leis de De Morgan generalizadas para famílias indexadas.
+- Problema-Marco: Demonstrar formalmente propriedades envolvendo conjunto das partes (ex.: A ⊆ B ⇔ P(A) ⊆ P(B)) e famílias indexadas arbitrárias.
+### Macrotema 2.5: Relações de Equivalência, Partições e Relações de Ordem
+- Trilha: TRL-00 | Complexidade: 3/5 | Pré-requisitos Diretos: 2.4
+- Modalidades de Prática: [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-13 [Rigor/Prova] (Cap. 4); BIB-14 [Intuição/Cálculo] (Cap. 9); BIB-17 [Algorítmica] (Cap. 9)
+- Subtemas:
+- Propriedades de relações binárias: reflexiva, irreflexiva, simétrica, antissimétrica, assimétrica e transitiva
+- Fechos de relações (reflexivo, simétrico e transitivo)
+- Relações de equivalência, classes de equivalência [x] e conjunto quociente A/~
+- Teorema fundamental de correspondência entre relações de equivalência e partições de um conjunto
+- Aritmética modular ℤ_n construída como conjunto quociente
+- Relações de ordem parcial (Posets), ordem total, diagramas de Hasse
+- Elementos maximais, minimais, máximo, mínimo, cotas superiores/inferiores, supremo e ínfimo
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Teorema Fundamental das Relações de Equivalência (bijeção entre relações de equivalência em A e partições de A) e boa-definição das operações no quociente ℤ_n.
+- Problema-Marco: Provar que uma relação dada é de equivalência, descrever suas classes de equivalência e demonstrar que a operação induzida no conjunto quociente independe do representante escolhido.
+### Macrotema 2.6: Teoria Rigorosa de Funções
+- Trilha: TRL-00 | Complexidade: 3/5 | Pré-requisitos Diretos: 2.4, 2.5
+- Modalidades de Prática: [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-13 [Rigor/Prova] (Cap. 5); BIB-14 [Intuição/Cálculo] (Cap. 8); BIB-17 [Algorítmica] (Cap. 2.3)
+- Subtemas:
+- Definição formal de função como relação funcional f ⊆ A × B
+- Provas formais de injetividade e sobrejetividade
+- Composição de funções, associatividade e preservação de injetividade/sobrejetividade
+- Invertibilidade lateral (inversa à esquerda vs. inversa à direita) e caracterização de bijeções
+- Imagem direta f(X) e imagem inversa f⁻¹(Y) de subconjuntos e suas propriedades algébricas frente a uniões, interseções e diferenças
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Caracterização de bijeção via existência de inversa bilateral, preservação de interseções pela imagem inversa f⁻¹(Y₁ ∩ Y₂) = f⁻¹(Y₁) ∩ f⁻¹(Y₂) e falha da igualdade para imagem direta f(X₁ ∩ X₂) ⊆ f(X₁) ∩ f(X₂) (com igualdade se e só se f é injetora).
+- Problema-Marco: Demonstrar todas as identidades e inclusões de imagem direta e imagem inversa para uniões, interseções e complementares.
+### Macrotema 2.7: Indução Matemática e Recursão
+- Trilha: TRL-00 | Complexidade: 3/5 | Pré-requisitos Diretos: 2.3, 2.4
+- Modalidades de Prática: [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-12 [Rigor/Prova] (Cap. 14); BIB-13 [Rigor/Prova] (Cap. 6); BIB-14 [Intuição/Cálculo] (Cap. 4); BIB-17 [Algorítmica] (Cap. 5)
+- Subtemas:
+- Princípio da Boa Ordenação dos números naturais
+- Princípio da Indução Matemática Fraca (1ª forma)
+- Princípio da Indução Matemática Forte / Completa (2ª forma)
+- Equivalência lógica entre Boa Ordenação, Indução Fraca e Indução Forte
+- Definições recursivas e indução estrutural
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Demonstração da equivalência entre Princípio da Boa Ordenação e Indução Matemática, e existência da fatoração em primos (via Indução Forte).
+- Problema-Marco: Provar fórmulas fechadas de recorrências lineares de 2ª ordem por Indução Forte e propriedades de árvores binárias por Indução Estrutural.
+### Macrotema 2.8: Cardinalidade e Infinitos
+- Trilha: TRL-00 | Complexidade: 4/5 | Pré-requisitos Diretos: 2.6, 2.7
+- Modalidades de Prática: [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-13 [Rigor/Prova] (Cap. 7); BIB-14 [Intuição/Cálculo] (Cap. 10); BIB-17 [Algorítmica] (Cap. 2.5)
+- Subtemas:
+- Equipotência entre conjuntos e princípio da casa dos pombos
+- Conjuntos finitos, conjuntos infinitos enumeráveis (ℵ₀) e propriedades (enumerabilidade de ℤ, ℚ, produto finito e união enumerável de enumeráveis)
+- Conjuntos não-enumeráveis e o Argumento Diagonal de Cantor para ℝ
+- Teorema de Cantor (|A| < |P(A)|) e cardinalidade do contínuo
+- Teorema de Cantor-Schröder-Bernstein
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Enumerabilidade de ℚ, não-enumerabilidade de (0,1) e ℝ (Diagonal de Cantor), Teorema de Cantor e Teorema de Cantor-Schröder-Bernstein.
+- Problema-Marco: Construir bijeções explícitas (ou usar Cantor-Schröder-Bernstein) para provar que |(0,1)| = |[0,1]| = |ℝ| = |ℝ²| = |P(ℕ)|.
+## NÍVEL 3: GEOMETRIA ANALÍTICA VETORIAL E ÁLGEBRA LINEAR
+### Macrotema 3.1: Vetores no Plano e no Espaço (ℝ² e ℝ³)
+- Trilha: TRL-02 | Complexidade: 2/5 | Pré-requisitos Diretos: 1.5, 1.10
+- Modalidades de Prática: [Cálculo/Algébrico]
+- Bibliografia e Capítulos: BIB-15 [Intuição/Cálculo] (Cap. 1); BIB-16 [Rigor/Prova] (Cap. 3.1)
+- Subtemas:
+- Segmentos orientados, equipolência e tratamento geométrico de vetores
+- Operações vetoriais: adição, subtração e multiplicação por escalar
+- Vetores em coordenadas cartesianas no ℝ² e ℝ³
+- Módulo (norma), vetor unitário (versor), paralelismo, ângulos diretores e cossenos diretores
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Propriedades de espaço vetorial geométrico e identidade dos cossenos diretores cos²α + cos²β + cos²γ = 1.
+- Problema-Marco: Decompor forças e deslocamentos tridimensionais em bases canônicas e determinar versores com direções especificadas por ângulos diretores.
+### Macrotema 3.2: Produtos de Vetores e Aplicações Métricas
+- Trilha: TRL-02 | Complexidade: 2/5 | Pré-requisitos Diretos: 3.1
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-15 [Intuição/Cálculo] (Caps. 2–4); BIB-16 [Rigor/Prova] (Cap. 3.2–3.5)
+- Subtemas:
+- Produto escalar (interno): definição algébrica e geométrica, ângulo entre vetores e condição de ortogonalidade
+- Projeção ortogonal de um vetor sobre outro e decomposição vetorial
+- Produto vetorial (u × v): definição, propriedades, orientação espacial e cálculo de área de paralelogramos/triângulos
+- Produto misto [u, v, w]: definição por determinante, teste de coplanaridade e volume de paralelepípedos/tetraedros
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Desigualdade de Cauchy-Schwarz no ℝ³, anticomutatividade do produto vetorial, Identidade de Lagrange ||u × v||² = ||u||²||v||² - (u·v)² e interpretação geométrica do produto misto.
+- Problema-Marco: Dado um tetraedro pelos vértices no ℝ³, calcular suas áreas das faces, ângulos diedros, volume e altura relativa a uma face usando produtos vetoriais.
+### Macrotema 3.3: Retas, Planos e Superfícies Quádricas no ℝ³
+- Trilha: TRL-02 | Complexidade: 3/5 | Pré-requisitos Diretos: 3.2
+- Modalidades de Prática: [Cálculo/Algébrico]
+- Bibliografia e Capítulos: BIB-15 [Intuição/Cálculo] (Caps. 5–9); BIB-26 [Intuição/Cálculo] (Cap. 12.5–12.6)
+- Subtemas:
+- Equações da reta no espaço: vetorial, paramétricas, simétricas e reduzidas
+- Equações do plano: geral (cartesiana), vetorial e paramétricas
+- Posições relativas e interseções: reta-reta (concorrentes, paralelas, reversas), reta-plano e plano-plano
+- Ângulos (entre retas, entre planos, reta-plano) e distâncias no espaço (ponto-ponto, ponto-reta, ponto-plano, reta-plano, entre retas reversas)
+- Superfícies quádricas: elipsoides, hiperboloides de uma e duas folhas, paraboloides elíptico e hiperbólico, superfícies cônicas e cilíndricas
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Fórmula da distância entre duas retas reversas via produto misto e classificação canônica das superfícies quádricas por traços coordenados.
+- Problema-Marco: Determinar a reta perpendicular comum e a distância mínima entre duas retas reversas no ℝ³ e esboçar quádricas por seções planas.
+### Macrotema 3.4: Sistemas de Equações Lineares e Álgebra Matricial
+- Trilha: TRL-02 | Complexidade: 2/5 | Pré-requisitos Diretos: 1.7, 2.3
+- Modalidades de Prática: [Cálculo/Algébrico]
+- Bibliografia e Capítulos: BIB-16 [Rigor/Prova] (Cap. 1)
+- Subtemas:
+- Operações elementares sobre linhas, forma escalonada e forma escalonada reduzida por linhas
+- Eliminação de Gauss e Eliminação de Gauss-Jordan
+- Sistemas lineares homogêneos e não-homogêneos
+- Álgebra matricial, matrizes em blocos, matrizes elementares e cálculo de inversa por redução de linhas
+- Fatoração LU de matrizes
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Unicidade da forma escalonada reduzida por linhas, equivalência entre invertibilidade de A e produto de matrizes elementares, e estrutura da solução geral x = x_p + x_h.
+- Problema-Marco: Decompor uma matriz 4×4 na forma A = LU e resolver sistemas lineares usando substituição progressiva e regressiva.
+### Macrotema 3.5: Teoria Geral dos Determinantes
+- Trilha: TRL-02 | Complexidade: 2/5 | Pré-requisitos Diretos: 3.4
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-16 [Rigor/Prova] (Cap. 2)
+- Subtemas:
+- Definição combinatória por permutações e expansão por cofatores
+- Efeito das operações elementares de linha sobre o determinante
+- Matriz adjunta clássica, fórmula da inversa pela adjunta e Regra de Cramer
+- Interpretação geométrica do determinante como fator de escala de área/volume orientado
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Multiplicatividade do determinante det(AB) = det(A)det(B), det(Aᵀ) = det(A), e critério det(A) ≠ 0 ⇔ A invertível.
+- Problema-Marco: Calcular determinantes simbólicos de ordem n (como o Determinante de Vandermonde) combinando operações elementares e indução.
+### Macrotema 3.6: Espaços Vetoriais Gerais
+- Trilha: TRL-02 | Complexidade: 4/5 | Pré-requisitos Diretos: 2.3, 2.7, 3.4
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-16 [Rigor/Prova] (Cap. 4.1–4.6)
+- Subtemas:
+- Axiomas de espaço vetorial real e complexo (ℝⁿ, ℂⁿ, matrizes M_mxn, polinômios P_n, espaços de funções C[a,b])
+- Subespaços vetoriais e operações entre subespaços (interseção, soma e soma direta)
+- Combinação linear e subespaço gerado (Span)
+- Independência linear (LI) e dependência linear (LD), Wronskiano para funções
+- Base, existência de base, coordenadas em relação a uma base ordenada e dimensão
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Caracterização de subespaço vetorial, Teorema da Invariância da Dimensão (todas as bases de um espaço finitamente gerado têm o mesmo número de vetores) e Fórmula de Grassmann dim(U + W) = dim(U) + dim(W) - dim(U ∩ W).
+- Problema-Marco: Determinar bases e dimensões da interseção e da soma de dois subespaços de P_3(ℝ) ou M_2x2(ℝ) e provar independência linear de conjuntos de funções via Wronskiano.
+### Macrotema 3.7: Os Quatro Subespaços Fundamentais de uma Matriz
+- Trilha: TRL-02 | Complexidade: 3/5 | Pré-requisitos Diretos: 3.6
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-16 [Rigor/Prova] (Cap. 4.7–4.9)
+- Subtemas:
+- Espaço linha, espaço coluna, espaço nulo (núcleo) e espaço nulo à esquerda
+- Bases para os subespaços fundamentais via escalonamento
+- Posto (rank), nulidade e o Teorema do Posto-Nulidade
+- Relações de ortogonalidade entre os quatro subespaços fundamentais e condições de consistência de Ax = b
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Igualdade entre posto-linha e posto-coluna, Teorema do Posto-Nulidade (posto(A) + nulidade(A) = n) e Teorema Fundamental da Álgebra Linear (N(A) = R(A)⊥ e N(Aᵀ) = C(A)⊥).
+- Problema-Marco: Para uma matriz retangular A_3x5, extrair bases explícitas para todos os quatro subespaços fundamentais e verificar sua ortogonalidade mútua.
+### Macrotema 3.8: Espaços com Produto Interno e Ortogonalidade
+- Trilha: TRL-02 | Complexidade: 4/5 | Pré-requisitos Diretos: 3.2, 3.7
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-16 [Rigor/Prova] (Cap. 6)
+- Subtemas:
+- Axiomas de produto interno geral (em ℝⁿ, matrizes, polinômios e funções contínuas)
+- Norma induzida, distância, Desigualdade de Cauchy-Schwarz e Desigualdade Triangular
+- Complemento ortogonal (W⊥) e teorema da decomposição ortogonal
+- Conjuntos e bases ortogonais e ortonormais, coordenadas em bases ortonormais
+- Processo de Ortogonalização de Gram-Schmidt e Decomposição QR
+- Melhor aproximação em subespaços e Método dos Mínimos Quadrados via projeção ortogonal
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Demonstração da Desigualdade de Cauchy-Schwarz em espaços abstratos com produto interno, Teorema da Projeção Ortogonal e Equações Normais AᵀAx̂ = Aᵀb.
+- Problema-Marco: Aplicar Gram-Schmidt ao espaço de polinômios P_2[-1,1] com produto interno integral ⟨p, q⟩ = ∫_{-1}^1 p(x)q(x) dx (gerando polinômios de Legendre) e resolver problemas de mínimos quadrados via decomposição QR.
+### Macrotema 3.9: Transformações Lineares e Mudança de Base
+- Trilha: TRL-02 | Complexidade: 4/5 | Pré-requisitos Diretos: 2.6, 3.6, 3.7
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-16 [Rigor/Prova] (Cap. 4.10–4.11, Cap. 8)
+- Subtemas:
+- Transformações lineares T: V → W e operadores lineares (reflexões, projeções, rotações, dilatações, derivação/integração)
+- Núcleo (Ker T) e Imagem (Im T), injetividade, sobrejetividade e Teorema do Núcleo e da Imagem
+- Isomorfismos de espaços vetoriais
+- Matriz de uma transformação linear em relação a bases quaisquer e matriz da composta
+- Matriz de mudança de base (transição) e matrizes semelhantes (B = P⁻¹AP)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Teorema do Núcleo e da Imagem (dim V = dim(Ker T) + dim(Im T)), invariância do determinante/traço/posto sob semelhança de matrizes e isomorfismo V ≅ ℝⁿ.
+- Problema-Marco: Determinar a matriz do operador de derivação ou projeção oblíqua em bases não-canônicas e calcular a matriz semelhante após mudança de base.
+### Macrotema 3.10: Autovalores, Autovetores, Diagonalização e Decomposição Espectral
+- Trilha: TRL-02 | Complexidade: 5/5 | Pré-requisitos Diretos: 3.5, 3.8, 3.9
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-16 [Rigor/Prova] (Caps. 5, 7, 9.3–9.5)
+- Subtemas:
+- Autovalores, autovetores, polinômio característico det(λI - A) = 0 e autoespaços
+- Multiplicidade algébrica vs. multiplicidade geométrica e critério de diagonalizabilidade
+- Potências de matrizes, Cadeias de Markov e sistemas dinâmicos discretos/contínuos via autovalores
+- Matrizes simétricas reais, diagonalização ortogonal e o Teorema Espectral
+- Formas quadráticas, diagonalização de formas quadráticas, matrizes definidas positivas e aplicação a cônicas/quádricas
+- Espaços vetoriais complexos: produto interno complexo, matrizes hermitianas, unitárias e normais
+- Decomposição em Valores Singulares (SVD) e pseudoinversa de Moore-Penrose
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Independência linear de autovetores associados a autovalores distintos, Teorema Espectral para matrizes simétricas reais (autovalores reais e autoespaços ortogonais), Critério de Sylvester para matrizes definidas positivas e existência da SVD (A = UΣVᵀ).
+- Problema-Marco: Diagonalizar ortogonalmente uma matriz simétrica 3×3 para eliminar termos mistos de uma forma quadrática e calcular a SVD completa de uma matriz retangular A_3x2.
+## NÍVEL 4: MATEMÁTICA DISCRETA E FUNDAMENTOS DA COMPUTAÇÃO
+### Macrotema 4.1: Algoritmos e Complexidade Assintótica
+- Trilha: TRL-03 | Complexidade: 2/5 | Pré-requisitos Diretos: 1.4, 2.7
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-17 [Intuição/Cálculo] (Cap. 3); BIB-20 [Algorítmica] (Cap. 1.1)
+- Subtemas:
+- Especificação de algoritmos, busca linear, busca binária, ordenação básica e algoritmos gulosos
+- Crescimento de funções e notações assintóticas: Big-O, Big-Ω e Big-Θ
+- Complexidade computacional de algoritmos (tempo e espaço, pior caso e caso médio)
+- Classes de complexidade P, NP, NP-Difícil e NP-Completo
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Definições formais por testemunhas (C, k) de O, Ω e Θ, hierarquia de taxas de crescimento e noção de redutibilidade polinomial.
+- Problema-Marco: Provar formalmente limites assintóticos usando testemunhas (C, k) para polinômios e somatórios logarítmicos e analisar a complexidade de pior e médio caso de algoritmos de busca.
+### Macrotema 4.2: Teoria Elementar dos Números e Criptografia
+- Trilha: TRL-03 | Complexidade: 3/5 | Pré-requisitos Diretos: 2.5, 2.7
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-17 [Rigor/Prova] (Cap. 4); BIB-21 [Algorítmica] (Cap. 4.5.2, 4.5.4)
+- Subtemas:
+- Divisibilidade, algoritmo da divisão de Euclides e representações em base b
+- Números primos, Teorema Fundamental da Aritmética e Crivo de Eratóstenes
+- Máximo Divisor Comum (MDC), Mínimo Múltiplo Comum (MMC), Algoritmo de Euclides Estendido e Identidade de Bézout
+- Aritmética modular, congruências lineares e inverso modular
+- Teorema Chinês dos Restos
+- Pequeno Teorema de Fermat, Função Totiente de Euler φ(n) e Teorema de Euler
+- Raízes primitivas, logaritmos discretos, números pseudoprimos e protocolos criptográficos (Cifras afins, RSA e troca de chaves de Diffie-Hellman)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Teorema Fundamental da Aritmética, Identidade de Bézout, Teorema Chinês dos Restos, Pequeno Teorema de Fermat, Teorema de Euler e correção matemática do RSA.
+- Problema-Marco: Implementar do zero o Algoritmo de Euclides Estendido, a exponenciação modular rápida e um protótipo funcional de geração de chaves, cifragem e decifragem RSA.
+### Macrotema 4.3: Contagem Avançada e Relações de Recorrência
+- Trilha: TRL-03 | Complexidade: 3/5 | Pré-requisitos Diretos: 1.8, 2.7
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-17 [Rigor/Prova] (Caps. 6, 8)
+- Subtemas:
+- Princípio da Casa dos Pombos generalizado e introdução à Teoria de Ramsey
+- Geração lexicográfica de permutações e combinações
+- Modelagem com relações de recorrência (Torre de Hanói, Fibonacci, Catalão)
+- Resolução de relações de recorrência lineares homogêneas e não-homogêneas com coeficientes constantes
+- Recorrências de divisão e conquista e o Teorema Mestre
+- Princípio da Inclusão-Exclusão e aplicações (número de funções sobrejetoras, desarranjos / permutações caóticas e crivos)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Teorema da equação característica (raízes distintas e repetidas), Teorema Mestre para T(n) = aT(n/b) + f(n) e Fórmula de Inclusão-Exclusão para n conjuntos.
+- Problema-Marco: Derivar a fórmula fechada dos desarranjos D_n e do número de funções sobrejetoras entre conjuntos finitos via Inclusão-Exclusão.
+### Macrotema 4.4: Teoria dos Grafos
+- Trilha: TRL-03 | Complexidade: 3/5 | Pré-requisitos Diretos: 2.5, 2.7
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-17 [Rigor/Prova] (Cap. 10); BIB-23 [Algorítmica] (Cap. 7)
+- Subtemas:
+- Tipologia de grafos: simples, multigrafos, pseudografos, grafos direcionados (dígrafos) e ponderados
+- Graus de vértices, Lema do Aperto de Mão e sequências gráficas
+- Famílias de grafos especiais, grafos bipartidos e casamentos em grafos bipartidos (Teorema de Hall)
+- Representação de grafos (listas de adjacência, matriz de adjacência, matriz de incidência) e isomorfismo de grafos
+- Caminhos, ciclos, conectividade em grafos e dígrafos (componentes conexas e fortemente conexas, vértices de corte e pontes)
+- Circuitos e caminhos Eulerianos e Hamiltonianos
+- Caminhos mínimos em grafos ponderados (Algoritmo de Dijkstra e Floyd-Warshall)
+- Grafos planares, Fórmula de Euler (V - A + R = 2) e Teorema de Kuratowski
+- Coloração de grafos, número cromático e Teorema das Quatro Cores
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Lema do Aperto de Mão, caracterização de grafos Eulerianos, Fórmula de Euler para grafos planares conexos e prova de não-planaridade de K_5 e K_{3,3}.
+- Problema-Marco: Implementar os algoritmos de Dijkstra e detecção de ciclos Eulerianos (Hierholzer) e demonstrar limites inferiores de coloração em grafos planares.
+### Macrotema 4.5: Árvores e Estruturas Hierárquicas
+- Trilha: TRL-03 | Complexidade: 3/5 | Pré-requisitos Diretos: 4.4
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-17 [Rigor/Prova] (Cap. 11); BIB-20 [Algorítmica] (Cap. 2.3)
+- Subtemas:
+- Caracterizações equivalentes de árvores (grafos conexos acíclicos com n - 1 arestas)
+- Árvores enraizadas, árvores m-árias e árvores binárias completas/balanceadas
+- Árvores binárias de busca e árvores de decisão (limites inferiores de ordenação por comparação)
+- Códigos de prefixo e Codificação de Huffman
+- Travessia de árvores (pré-ordem, em-ordem, pós-ordem) e notações infixa, prefixa (polonesa) e pós-fixa (polonesa reversa)
+- Busca em Largura (BFS), Busca em Profundidade (DFS) e Backtracking básico
+- Árvores geradoras mínimas (Algoritmos de Prim e Kruskal)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Prova de que toda árvore com n vértices possui n-1 arestas, limite inferior Ω(n log n) de ordenação por comparação via árvore de decisão e otimalidade gulosa dos códigos de Huffman.
+- Problema-Marco: Implementar um compressor/descompressor baseado na árvore de Huffman e algoritmos de Kruskal/Prim com estrutura Union-Find.
+### Macrotema 4.6: Álgebra Booleana, Linguagens Formais e Máquinas de Estado
+- Trilha: TRL-03 | Complexidade: 3/5 | Pré-requisitos Diretos: 2.2, 2.5, 4.5
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-17 [Rigor/Prova] (Caps. 12–13); BIB-23 [Algorítmica] (Cap. 7.1.1)
+- Subtemas:
+- Funções booleanas, identidades da álgebra booleana e princípio da dualidade
+- Formas normais disjuntiva (soma de mintermos) e conjuntiva (produto de maxtermos)
+- Completude funcional de operadores lógicos (NAND e NOR) e projeto de circuitos combinacionais
+- Minimização de circuitos booleanos: Mapas de Karnaugh e Método de Quine-McCluskey
+- Gramáticas formais e a Hierarquia de Chomsky
+- Autômatos finitos com e sem saída (Mealy, Moore, AFD e AFND)
+- Expressões regulares, linguagens regulares, Teorema de Kleene e Lema do Bombeamento
+- Máquinas de Turing, decidibilidade e o Problema da Parada
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Completude funcional de {NAND}, equivalência entre AFD e AFND (construção de subconjuntos), Lema do Bombeamento para linguagens regulares e indecidibilidade do Problema da Parada.
+- Problema-Marco: Minimizar funções booleanas de 4 variáveis via Quine-McCluskey e demonstrar via Lema do Bombeamento que {0ⁿ1ⁿ | n ≥ 0} não é regular.
+## NÍVEL 5: CÁLCULO DIFERENCIAL E INTEGRAL (UMA E VÁRIAS VARIÁVEIS, VETORIAL, SÉRIES E EDOS)
+### Macrotema 5.1: Limites e Continuidade de Funções de Uma Variável Real
+- Trilha: TRL-01 | Complexidade: 3/5 | Pré-requisitos Diretos: 1.4, 1.5, 2.2, 2.3
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-25 [Intuição/Cálculo] (Caps. 1–2); BIB-27 [Rigor/Prova] (Caps. 1–5); BIB-08 [Intuição/Cálculo] (Caps. I–III, complementar)
+- Subtemas:
+- Definição formal ε-δ de limite, unicidade do limite e propriedades operatórias
+- Limites laterais, Teorema do Confronto (Sanduíche) e conservação do sinal
+- Limite trigonométrico fundamental e limites de funções trigonométricas
+- Limites no infinito, limites infinitos, assíntotas horizontais, verticais e oblíquas, e o limite exponencial fundamental (número e)
+- Continuidade pontual e global, álgebra das funções contínuas e continuidade de funções compostas e inversas
+- Teorema do Valor Intermediário (Bolzano) e Teorema de Weierstrass (existência de máximo e mínimo em compactos [a,b])
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Unicidade do limite, Teorema do Confronto, Limite Trigonométrico Fundamental lim_{x→0} (sen x)/x = 1, Teorema do Valor Intermediário e Teorema de Weierstrass.
+- Problema-Marco: Provar limites de polinômios de grau 2 e funções racionais diretamente pela definição ε-δ e aplicar Bolzano para provar existência de raízes de equações transcendentes.
+### Macrotema 5.2: Diferenciação em Uma Variável
+- Trilha: TRL-01 | Complexidade: 2/5 | Pré-requisitos Diretos: 5.1
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-25 [Intuição/Cálculo] (Cap. 3); BIB-27 [Rigor/Prova] (Caps. 6–8)
+- Subtemas:
+- Definição de derivada, interpretação geométrica (reta tangente) e cinemática (taxa de variação instantânea)
+- Relação entre diferenciabilidade e continuidade, derivadas laterais
+- Regras de derivação: linearidade, regra do produto, regra do quociente
+- Derivadas de funções polinomiais, exponenciais, logarítmicas, trigonométricas, trigonométricas inversas e hiperbólicas
+- Regra da Cadeia, derivada da função inversa e derivação implícita e logarítmica
+- Derivadas de ordem superior, diferencial, aproximação linear e taxas relacionadas
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Prova de que toda função derivável num ponto é contínua nesse ponto (e contraexemplo |x|), regras do produto/quociente, Regra da Cadeia e derivada da função inversa.
+- Problema-Marco: Derivar funções compostas arbitrárias envolvendo funções inversas trigonométricas/hiperbólicas, derivação implícita de curvas algébricas e resolver problemas de taxas relacionadas acopladas.
+### Macrotema 5.3: Teoremas do Valor Médio, Polinômio de Taylor e Otimização em ℝ
+- Trilha: TRL-01 | Complexidade: 3/5 | Pré-requisitos Diretos: 5.2
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-25 [Intuição/Cálculo] (Cap. 4); BIB-27 [Rigor/Prova] (Caps. 9, 16)
+- Subtemas:
+- Extremos locais e globais, pontos críticos e Teorema de Fermat
+- Teorema de Rolle, Teorema do Valor Médio de Lagrange e Teorema do Valor Médio de Cauchy
+- Formas indeterminadas (0/0, ∞/∞, 0·∞, ∞ - ∞, 0⁰, 1^∞, ∞⁰) e Regras de L'Hôpital
+- Estudo da variação das funções: crescimento/decrescimento, concavidade e pontos de inflexão
+- Testes da 1ª, 2ª e n-ésima derivada para extremos locais
+- Polinômio de Taylor com Resto de Peano (fórmula infinitesimal) e com Resto de Lagrange e de Integral
+- Esboço completo de gráficos e problemas de otimização de uma variável
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Demonstração do Teorema de Rolle e do Teorema do Valor Médio de Lagrange, corolários sobre funções com derivada nula/positiva em intervalos e Fórmula de Taylor com Resto de Lagrange.
+- Problema-Marco: Utilizar o Teorema do Valor Médio para demonstrar desigualdades transcendentes (ex.: sen x < x para x > 0 e eˣ ≥ 1 + x) e estimar erros de aproximação polinomial via Resto de Lagrange.
+### Macrotema 5.4: A Integral de Riemann e o Teorema Fundamental do Cálculo
+- Trilha: TRL-01 | Complexidade: 3/5 | Pré-requisitos Diretos: 5.3
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-25 [Intuição/Cálculo] (Cap. 5); BIB-27 [Rigor/Prova] (Caps. 10–12)
+- Subtemas:
+- Partições de um intervalo, somas inferiores e superiores, Somas de Riemann e definição de integral definida
+- Condições de integrabilidade (funções contínuas, monótonas e limitadas com número finito de descontinuidades)
+- Propriedades algébricas e de ordem da integral definida
+- Teorema do Valor Médio para Integrais
+- Primitivas (integral indefinida) e o 1º e 2º Teoremas Fundamentais do Cálculo
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Teorema do Valor Médio para Integrais, demonstração do 1º Teorema Fundamental do Cálculo (d/dx ∫_a^x f(t) dt = f(x)) e 2º Teorema Fundamental do Cálculo (Regra de Barrow).
+- Problema-Marco: Calcular limites de somatórios identificando-os como Somas de Riemann e derivar funções definidas por integrais com limites de integração funcionais ∫_{u(x)}^{v(x)} f(t) dt.
+### Macrotema 5.5: Técnicas de Integração e Integrais Impróprias
+- Trilha: TRL-01 | Complexidade: 3/5 | Pré-requisitos Diretos: 1.9, 5.4
+- Modalidades de Prática: [Cálculo/Algébrico]
+- Bibliografia e Capítulos: BIB-25 [Intuição/Cálculo] (Cap. 7); BIB-27 [Rigor/Prova] (Cap. 12); BIB-28 [Rigor/Prova] (Cap. 1)
+- Subtemas:
+- Integração por mudança de variável (substituição simples) e integração por partes
+- Integrais de potências e produtos de funções trigonométricas
+- Substituições trigonométricas (seno, tangente, secante)
+- Integração de funções racionais por decomposição em frações parciais (fatores lineares e quadráticos irredutíveis, distintos e repetidos)
+- Substituição universal de Weierstrass (t = tan(x/2)) e substituições de racionalização
+- Integrais impróprias de 1ª espécie (intervalos infinitos) e de 2ª espécie (integrandos ilimitados)
+- Critérios de convergência para integrais impróprias (comparação direta, comparação no limite e convergência absoluta)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Fórmula de integração por partes, teorema de decomposição em frações parciais em ℝ[x] e critérios de comparação para integrais impróprias (p-integrais ∫_1^∞ dx/x^p).
+- Problema-Marco: Resolver integrais racionais complexas com fatores quadráticos repetidos, integrais com radicais via substituição trigonométrica e determinar a convergência da Função Gama Γ(s) = ∫_0^∞ x^{s-1}e^{-x} dx.
+### Macrotema 5.6: Aplicações Geométricas e Físicas da Integral Definida
+- Trilha: TRL-01 | Complexidade: 2/5 | Pré-requisitos Diretos: 1.10, 1.11, 5.5
+- Modalidades de Prática: [Cálculo/Algébrico]
+- Bibliografia e Capítulos: BIB-25 [Intuição/Cálculo] (Caps. 6, 8); BIB-26 [Intuição/Cálculo] (Cap. 10.1–10.4); BIB-27 [Rigor/Prova] (Cap. 13)
+- Subtemas:
+- Cálculo de áreas de regiões planas em coordenadas cartesianas, paramétricas e polares
+- Cálculo de volumes de sólidos por fatiamento (seções transversais), método dos discos/arruelas e método das cascas cilíndricas
+- Comprimento de arco de curva plana (cartesiana, paramétrica e polar) e área de superfície de revolução
+- Aplicações físicas: trabalho de força variável, centro de massa / centroide (Teorema de Pappus), momento de inércia e pressão/força hidrostática
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Fórmulas de volume por discos/cascas cilíndricas, fórmula de comprimento de arco e Teorema de Pappus-Guldinus.
+- Problema-Marco: Calcular volume de revolução em torno de eixos oblíquos ou deslocados por discos e cascas cilíndricas (verificando igualdade dos resultados) e determinar centroide de lâminas planas.
+### Macrotema 5.7: Funções Vetoriais e Geometria Diferencial Elementar de Curvas
+- Trilha: TRL-01 | Complexidade: 3/5 | Pré-requisitos Diretos: 3.2, 3.3, 5.2, 5.6
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-26 [Intuição/Cálculo] (Cap. 13); BIB-28 [Rigor/Prova] (Cap. 7)
+- Subtemas:
+- Funções vetoriais r(t): I ⊂ ℝ → ℝⁿ, limites, continuidade e derivadas de funções vetoriais
+- Curvas parametrizadas regulares, vetor tangente, velocidade e aceleração
+- Comprimento de arco de curvas espaciais e reparametrização por comprimento de arco
+- Curvatura κ, raio de curvatura, torção τ e o Triedro Móvel de Frenet (vetores T, N, B)
+- Planos osculador, normal e retificante, componentes tangencial e normal da aceleração e Fórmulas de Frenet-Serret
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Fórmulas de Frenet-Serret, expressão da curvatura κ(t) = ||r'(t) × r''(t)|| / ||r'(t)||³ e decomposição a = a_T T + a_N N.
+- Problema-Marco: Reparametrizar uma hélice circular pelo comprimento de arco e calcular explicitamente seu Triedro de Frenet (T, N, B), curvatura e torção.
+### Macrotema 5.8: Cálculo Diferencial de Funções de Várias Variáveis
+- Trilha: TRL-01 | Complexidade: 3/5 | Pré-requisitos Diretos: 3.3, 5.2
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-26 [Intuição/Cálculo] (Cap. 14.1–14.6); BIB-28 [Rigor/Prova] (Caps. 8–13)
+- Subtemas:
+- Topologia básica do ℝⁿ (bolas abertas, conjuntos abertos, fechados, fronteira, interior, pontos de acumulação, compactos e conexos)
+- Funções reais de várias variáveis f: A ⊂ ℝⁿ → ℝ, domínio, gráficos, curvas e superfícies de nível
+- Limites em várias variáveis (caminhos, coordenadas polares, definição ε-δ) e continuidade
+- Derivadas parciais de 1ª ordem e de ordem superior, e o Teorema de Schwarz (igualdade das derivadas parciais mistas)
+- Diferenciabilidade de funções de várias variáveis, condição suficiente de diferenciabilidade (classe C¹), plano tangente e diferencial total
+- Vetor gradiente ∇f, Regra da Cadeia para funções de várias variáveis, derivadas direcionais e taxa máxima de variação
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Existência de derivadas parciais não implica continuidade/diferenciabilidade (contraexemplos), Teorema de Schwarz (f_xy = f_yx em classe C²), e ortogonalidade do gradiente ∇f às superfícies de nível.
+- Problema-Marco: Analisar continuidade, existência de derivadas parciais e diferenciabilidade na origem para funções definidas por partes no ℝ² e aplicar Regra da Cadeia em equações diferenciais parciais (ex.: mudança para coordenadas polares do Laplaciano).
+### Macrotema 5.9: Transformações de ℝⁿ em ℝᵐ, Funções Implícitas e Otimização Multivariada
+- Trilha: TRL-01 | Complexidade: 4/5 | Pré-requisitos Diretos: 3.5, 3.10, 5.3, 5.8
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-26 [Intuição/Cálculo] (Cap. 14.7–14.8); BIB-28 [Rigor/Prova] (Caps. 14–16)
+- Subtemas:
+- Aplicações F: A ⊂ ℝⁿ → ℝᵐ, diferenciabilidade, Matriz Jacobiana e Regra da Cadeia matricial
+- Teorema da Função Implícita (para uma equação F(x,y) = 0, F(x₁,...,x_n, z) = 0 e para sistemas de equações)
+- Teorema da Função Inversa e difeomorfismos locais
+- Fórmula de Taylor de 2ª ordem e de ordem k para funções de várias variáveis
+- Matriz Hessiana, estudo de formas quadráticas e classificação de pontos críticos livres (máximo local, mínimo local e ponto de sela)
+- Otimização em conjuntos compactos (fronteira e interior)
+- Extremos condicionados: Método dos Multiplicadores de Lagrange com uma e múltiplas restrições de igualdade
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Enunciado e condições de hipótese (det J ≠ 0) dos Teoremas da Função Inversa e Implícita, Teste da Matriz Hessiana via autovalores/menores principais e condição de Lagrange ∇f = ∑ λ_i ∇g_i.
+- Problema-Marco: Encontrar extremos globais de uma função de 3 variáveis sobre um compacto com fronteira (combinando pontos críticos interiores e Multiplicadores de Lagrange na fronteira).
+### Macrotema 5.10: Integrais Múltiplas (Duplas e Triplas)
+- Trilha: TRL-01 | Complexidade: 3/5 | Pré-requisitos Diretos: 3.5, 5.5, 5.8
+- Modalidades de Prática: [Cálculo/Algébrico]
+- Bibliografia e Capítulos: BIB-26 [Intuição/Cálculo] (Cap. 15); BIB-29 [Rigor/Prova] (Caps. 1–5)
+- Subtemas:
+- Integral dupla de Riemann sobre retângulos e sobre regiões limitadas gerais (regiões de Tipo I e Tipo II)
+- Teorema de Fubini (integrais iteradas) e inversão da ordem de integração
+- Integral tripla em caixas retangulares e regiões espaciais gerais
+- Teorema de Mudança de Variáveis em integrais múltiplas (o determinante Jacobiano)
+- Integração em coordenadas polares, cilíndricas, esféricas e transformações gerais
+- Aplicações de integrais múltiplas: volume, área de superfície z = f(x,y), massa, centro de massa e momentos de inércia
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Teorema de Fubini, Fórmula de Mudança de Variáveis com módulo do determinante Jacobiano |det ∂(x,y,z)/∂(u,v,w)| e Jacobianos em coordenadas polares (r), cilíndricas (r) e esféricas (ρ² sen φ).
+- Problema-Marco: Calcular a integral Gaussiana ∫_{-∞}^∞ e^{-x²} dx = √π via integral dupla em coordenadas polares e determinar volumes de interseções de sólidos em coordenadas esféricas/cilíndricas.
+### Macrotema 5.11: Cálculo Vetorial (Integrais de Linha, Integrais de Superfície e Teoremas Clássicos)
+- Trilha: TRL-01 | Complexidade: 4/5 | Pré-requisitos Diretos: 5.7, 5.9, 5.10
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-26 [Intuição/Cálculo] (Cap. 16); BIB-29 [Rigor/Prova] (Caps. 6–12)
+- Subtemas:
+- Campos escalares e campos vetoriais em ℝ² e ℝ³
+- Operadores diferenciais vetoriais: gradiente (∇f), divergente (∇·F), rotacional (∇×F) e Laplaciano (∇²f) e suas identidades
+- Integrais de linha de campos escalares (em relação ao comprimento de arco) e de campos vetoriais (trabalho e fluxo planar)
+- Campos vetoriais conservativos, funções potenciais, independência de caminho, condição de irrotacionalidade e topologia do domínio (simplesmente conexo)
+- Teorema Fundamental para Integrais de Linha e Teorema de Green no plano (formas de circulação/tangencial e de fluxo/normal)
+- Superfícies parametrizadas regulares, plano tangente, vetor normal e área de superfície parametrizada
+- Integrais de superfície de campos escalares (massa de cascas) e de campos vetoriais (fluxo através de superfícies orientadas)
+- Teorema de Stokes no espaço e Teorema da Divergência de Gauss
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Identidades ∇ × (∇f) = 0 e ∇ · (∇ × F) = 0, contraexemplo do campo vórtice F = (-y, x)/(x²+y²) em domínio não simplesmente conexo, Teorema de Green, Teorema de Stokes e Teorema da Divergência de Gauss.
+- Problema-Marco: Verificar diretamente os Teoremas de Stokes e de Gauss calculando ambos os lados das identidades (integral de superfície vs. integral de linha/volume) para campos vetoriais não-triviais em superfícies fechadas e abertas.
+### Macrotema 5.12: Sequências e Séries Numéricas, Séries de Funções, Potências e Fourier
+- Trilha: TRL-01 | Complexidade: 4/5 | Pré-requisitos Diretos: 5.3, 5.5
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-26 [Intuição/Cálculo] (Cap. 11); BIB-30 [Rigor/Prova] (Caps. 1–5)
+- Subtemas:
+- Sequências numéricas: convergência, sequências monótonas limitadas e subsequências
+- Séries numéricas infinitas: condição necessária de convergência, série geométrica, série telescópica e série p (harmônica generalizada)
+- Critérios de convergência para séries de termos positivos: Teste da Integral, Comparação, Comparação no Limite, Teste da Razão (D'Alembert), Teste da Raiz (Cauchy) e Teste de Raabe
+- Séries alternadas (Teste de Leibniz), estimativa de resto, convergência absoluta vs. condicional, Critérios de Dirichlet e de Abel
+- Sequências e séries de funções: convergência pontual vs. convergência uniforme, Critério de Cauchy uniforme e Teste M de Weierstrass
+- Consequências da convergência uniforme: continuidade da soma, integração termo a termo e derivação termo a termo
+- Séries de potências: raio e intervalo de convergência, Teorema de Abel, Séries de Taylor e de Maclaurin e funções analíticas
+- Séries de Fourier: funções periódicas, sistema trigonométrico ortogonal, cálculo dos coeficientes de Euler-Fourier, extensões pares e ímpares, Teorema de Dirichlet (convergência pontual), fenômeno de Gibbs e Identidade de Parseval
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Todos os testes de convergência de séries numéricas, Teste M de Weierstrass, teoremas de integração/derivação termo a termo sob convergência uniforme e Identidade de Parseval para Séries de Fourier.
+- Problema-Marco: Determinar o intervalo exato de convergência (incluindo análise nos extremos) de séries de potências e expandir funções periódicas descontínuas em Séries de Fourier deduzindo somas exatas de séries numéricas (ex.: ∑ 1/n² = π²/6).
+### Macrotema 5.13: Equações Diferenciais Ordinárias (EDOs)
+- Trilha: TRL-01 | Complexidade: 4/5 | Pré-requisitos Diretos: 1.9, 3.10, 5.5, 5.12
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-26 [Intuição/Cálculo] (Caps. 9, 17); BIB-30 [Rigor/Prova] (Caps. 6–12)
+- Subtemas:
+- Classificação de EDOs, Problemas de Valor Inicial (PVI) e Teorema de Existência e Unicidade de Picard-Lindelöf
+- EDOs de 1ª ordem: variáveis separáveis, homogêneas, lineares (fator integrante), equação de Bernoulli, equação de Riccati, equações exatas e fatores integrantes, e equação de Clairaut
+- EDOs lineares de 2ª ordem e de ordem n: estrutura algébrica do espaço solução, independência linear de soluções, Wronskiano e Fórmula de Abel
+- Equações lineares homogêneas com coeficientes constantes (raízes reais distintas, repetidas e complexas conjugadas) e Equação de Euler-Cauchy
+- Equações lineares não-homogêneas: Método dos Coeficientes a Determinar, Método da Variação dos Parâmetros e redução de ordem de D'Alembert
+- Resolução de EDOs lineares por séries de potências em torno de pontos ordinários e pontos singulares regulares (Método de Frobenius e Equação de Bessel/Legendre)
+- Sistemas de EDOs lineares de 1ª ordem: autovalores/autovetores, matriz fundamental, matriz exponencial exp(At), plano de fase e estabilidade
+- Transformada de Laplace: definição, linearidade, transformada de derivadas/integrais, transladação, função degrau de Heaviside, Delta de Dirac, Teorema da Convolução e resolução de PVIs
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Teorema de Picard-Lindelöf, dimensão do espaço solução de EDOs lineares homogêneas de ordem n, Fórmula de Abel para o Wronskiano, Teorema da Convolução de Laplace e Método de Frobenius.
+- Problema-Marco: Resolver um sistema linear de EDOs 3×3 calculando explicitamente exp(At), resolver uma EDO não-homogênea com termo forçante descontínuo via Transformada de Laplace e obter soluções em série via Frobenius.
+## NÍVEL 6: CÁLCULO NUMÉRICO E ALGORITMOS SEMINUMÉRICOS
+### Macrotema 6.1: Aritmética de Ponto Flutuante e Análise de Erros
+- Trilha: TRL-02 | Complexidade: 2/5 | Pré-requisitos Diretos: 4.1, 5.3
+- Modalidades de Prática: [Cálculo/Algébrico], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-31 [Aplicação/Referência] (Cap. 1); BIB-21 [Algorítmica] (Cap. 4.1–4.2)
+- Subtemas:
+- Sistemas de numeração posicional e conversão entre bases
+- Representação em ponto flutuante (padrão IEEE 754, mantissa, expoente, precisão de máquina, underflow e overflow)
+- Erros de arredondamento e truncamento, erro absoluto e erro relativo
+- Propagação de erros em operações aritméticas, cancelamento subtrativo catastrófico, condicionamento de problemas e estabilidade numérica de algoritmos
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Definição de épsilon de máquina (ε_mach), fórmula de propagação de erro relativo de 1ª ordem e distinção entre problema mal-condicionado e algoritmo numericamente instável.
+- Problema-Marco: Implementar rotinas que demonstrem cancelamento catastrófico (ex.: cálculo de raízes de equações quadráticas com b² ≫ 4ac ou somatórios harmônicos em ordem direta vs. inversa) e reformulá-las para estabilidade numérica.
+### Macrotema 6.2: Zeros de Funções Reais (Equações Não-Lineares)
+- Trilha: TRL-02 | Complexidade: 2/5 | Pré-requisitos Diretos: 5.3, 6.1
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-31 [Aplicação/Referência] (Cap. 2)
+- Subtemas:
+- Isolamento de raízes por análise gráfica e mudança de sinal (Teorema de Bolzano)
+- Métodos de confinamento: Método da Bisseção e Método da Falsa Posição (Regula Falsi)
+- Métodos abertos: Iteração de Ponto Fixo (critério de convergência), Método de Newton-Raphson e Método da Secante
+- Análise da ordem e taxa de convergência (linear, superlinear e quadrática) e raízes múltiplas
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Cota de erro a priori da Bisseção, Teorema da Convergência do Ponto Fixo (|g'(x)| ≤ L < 1) e demonstração da convergência quadrática local de Newton-Raphson para raízes simples.
+- Problema-Marco: Implementar os métodos da Bisseção, Ponto Fixo, Newton-Raphson e Secante com critérios de parada híbridos (erro relativo + resíduo) e comparar empiricamente suas ordens de convergência.
+### Macrotema 6.3: Álgebra Linear Numérica e Sistemas Não-Lineares
+- Trilha: TRL-02 | Complexidade: 3/5 | Pré-requisitos Diretos: 3.4, 3.8, 5.9, 6.2
+- Modalidades de Prática: [Cálculo/Algébrico], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-31 [Aplicação/Referência] (Cap. 3)
+- Subtemas:
+- Métodos diretos para sistemas lineares: Eliminação de Gauss com pivotamento parcial e total, Fatoração LU, Fatoração de Cholesky (matrizes simétricas positivas definidas) e Algoritmo de Thomas (matrizes tridiagonais)
+- Normas vetoriais e matriciais, número de condição de uma matriz e análise de sensibilidade
+- Métodos iterativos para sistemas lineares: Gauss-Jacobi, Gauss-Seidel e Sobre-Relaxação Sucessiva (SOR)
+- Critérios de convergência para métodos iterativos (critério das linhas/diagonal dominante, critério de Sassenfeld e raio espectral)
+- Resolução de sistemas de equações não-lineares pelo Método de Newton-Raphson Multivariado e Quase-Newton
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Desigualdade fundamental de condicionamento ||Δx||/||x|| ≤ κ(A) ||Δb||/||b||, existência e unicidade da Fatoração de Cholesky e condição necessária e suficiente de convergência iterativa ρ(G) < 1.
+- Problema-Marco: Implementar solver completo de sistemas lineares com Fatoração LU com pivotamento parcial, Cholesky, Gauss-Seidel e solver não-linear via Newton-Raphson com Matriz Jacobiana.
+### Macrotema 6.4: Interpolação e Ajuste de Curvas (Aproximação de Funções)
+- Trilha: TRL-02 | Complexidade: 3/5 | Pré-requisitos Diretos: 3.8, 5.3, 6.3
+- Modalidades de Prática: [Cálculo/Algébrico], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-31 [Aplicação/Referência] (Cap. 4)
+- Subtemas:
+- Interpolação polinomial: existência e unicidade (Matriz de Vandermonde)
+- Polinômio Interpolador na Forma de Lagrange
+- Operador de diferenças divididas e Polinômio Interpolador na Forma de Newton
+- Diferenças finitas ascendentes/descendentes e fórmula de Newton-Gregory para pontos igualmente espaçados
+- Estimativa de erro na interpolação polinomial, Fenômeno de Runge e nós de Chebyshev
+- Interpolação segmentada: Splines lineares e Splines cúbicas (naturais e fixadas)
+- Ajuste de curvas pelo Método dos Mínimos Quadrados discreto e contínuo (regressão linear, polinomial e modelos não-lineares linearizáveis)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Unicidade do polinômio interpolador de grau ≤ n, fórmula do erro de interpolação de Cauchy-Lagrange e sistema tridiagonal das Splines cúbicas naturais.
+- Problema-Marco: Reproduzir numericamente o Fenômeno de Runge em f(x) = 1 / (1 + 25x²) comparando polinômio de grau alto em nós equidistantes vs. nós de Chebyshev vs. Spline cúbica natural.
+### Macrotema 6.5: Diferenciação e Integração Numérica
+- Trilha: TRL-02 | Complexidade: 3/5 | Pré-requisitos Diretos: 5.5, 6.4
+- Modalidades de Prática: [Cálculo/Algébrico], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-31 [Aplicação/Referência] (Cap. 5)
+- Subtemas:
+- Fórmulas de diferenciação numérica por diferenças finitas (progressivas, regressivas e centrais de 1ª e 2ª ordem via Série de Taylor)
+- Extrapolação de Richardson para derivadas
+- Fórmulas de Quadratura de Newton-Cotes fechadas e abertas: Regra dos Trapézios, 1ª Regra de Simpson (1/3) e 2ª Regra de Simpson (3/8) simples e compostas
+- Análise do erro de truncamento nas fórmulas de quadratura e Integração de Romberg
+- Quadratura de Gauss (Gauss-Legendre): escolha ótima de nós e pesos via polinômios ortogonais
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Ordem de truncamento O(h²) para Trapézios composta e O(h⁴) para Simpson 1/3 composta, e grau de exatidão polinomial 2n - 1 da Quadratura de Gauss-Legendre com n pontos.
+- Problema-Marco: Implementar Integração de Romberg e Quadratura de Gauss-Legendre, comparando o número de avaliações de função necessárias para atingir precisão de 10⁻¹² em integrais sem primitiva elementar.
+### Macrotema 6.6: Solução Numérica de EDOs e EDPs
+- Trilha: TRL-02 | Complexidade: 4/5 | Pré-requisitos Diretos: 5.13, 6.3, 6.5
+- Modalidades de Prática: [Cálculo/Algébrico], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-31 [Aplicação/Referência] (Cap. 6)
+- Subtemas:
+- Problemas de Valor Inicial (PVI) de 1ª ordem: Método de Euler explícito e implícito e métodos de Série de Taylor
+- Métodos de Runge-Kutta explícitos de passo simples (RK2 / Heun / Ponto Médio e RK4 clássico)
+- Métodos lineares de passo múltiplo: Adams-Bashforth (explícitos), Adams-Moulton (implícitos) e esquemas Preditor-Corretor
+- Resolução numérica de sistemas de EDOs e EDOs de ordem superior (redução a sistema de 1ª ordem), rigidez (stiffness) e estabilidade absoluta
+- Problemas de Valor de Contorno (PVC): Método do Tiro (Shooting) e Método das Diferenças Finitas
+- Introdução numérica às Equações Diferenciais Parciais (EDPs): diferenças finitas para equações elípticas (Laplace/Poisson), parabólicas (Calor — explícito, implícito e Crank-Nicolson) e hiperbólicas (Onda)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Erro local vs. erro global de truncamento, condição de estabilidade CFL (Courant-Friedrichs-Lewy) para diferenças finitas explícitas e estabilidade incondicional de Crank-Nicolson.
+- Problema-Marco: Implementar integrador RK4 para sistemas de EDOs não-lineares (ex.: Atrator de Lorenz ou Pêndulo Duplo) e resolver a equação do calor 1D via Crank-Nicolson.
+### Macrotema 6.7: Algoritmos Seminuméricos (TAOCP Vol. 2)
+- Trilha: TRL-03 | Complexidade: 5/5 | Pré-requisitos Diretos: 4.2, 6.1, 7.3, 7.9
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-21 [Algorítmica] (Caps. 3–4)
+- Subtemas:
+- Geração de números pseudoaleatórios uniformes: geradores congruenciais lineares, geradores de Fibonacci defasados e registros de deslocamento
+- Testes estatísticos e teóricos de aleatoriedade: Teste Qui-Quadrado, Teste de Kolmogorov-Smirnov, testes empíricos (serial, gap, poker, coupon collector, run, colisão) e o Teste Espectral
+- Transformação de variáveis aleatórias uniformes para outras distribuições (método da inversão, método da rejeição de von Neumann, Box-Muller e método polar para normais)
+- Aritmética de multiprecisão (precisão arbitrária) para inteiros grandes e frações
+- Algoritmos de multiplicação rápida de inteiros e polinômios: Karatsuba, Toom-Cook e Schönhage-Strassen (via Transformada Rápida de Fourier — FFT discreta e modular)
+- Fatoração de inteiros e testes de primalidade probabilísticos e determinísticos (Fermat, Solovay-Strassen, Miller-Rabin, Crivo Quadrático)
+- Avaliação eficiente de polinômios (Regra de Horner, adaptação de coeficientes, avaliação multiponto), cadeias de adição para exponenciação rápida e manipulação algorítmica de séries formais de potências
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Teorema de Hull-Dobell para período máximo de geradores congruenciais lineares, complexidade O(n^{log₂ 3}) de Karatsuba e O(n log n log log n) de Schönhage-Strassen, e cota de erro (1/4)^k do teste de primalidade de Miller-Rabin.
+- Problema-Marco: Implementar do zero uma biblioteca de inteiros de precisão arbitrária com multiplicação de Karatsuba e teste de primalidade de Miller-Rabin.
+## NÍVEL 7: PROBABILIDADE, INFERÊNCIA ESTATÍSTICA MODERNA E RENDA FIXA
+### Macrotema 7.1: Estatística Descritiva e Análise Exploratória de Dados
+- Trilha: TRL-04 | Complexidade: 2/5 | Pré-requisitos Diretos: 1.12
+- Modalidades de Prática: [Cálculo/Algébrico], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-32 [Intuição/Cálculo] (Caps. 1–4)
+- Subtemas:
+- Classificação de variáveis (qualitativas nominais/ordinais e quantitativas discretas/contínuas)
+- Distribuições de frequências, histogramas, gráficos de densidade, ramo-e-folhas e boxplots
+- Medidas de posição (média, mediana, moda, quantis, percentis, média aparada)
+- Medidas de dispersão (amplitude, distância interquartil, variância, desvio-padrão, desvio absoluto mediano, coeficiente de variação)
+- Medidas de forma: assimetria (skewness) e curtose (kurtosis)
+- Análise bidimensional: tabelas de contingência, associação entre variáveis qualitativas (Qui-Quadrado de contingência, V de Cramér) e quantitativas (covariância e correlação linear de Pearson)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Propriedades algébricas da média e da variância sob transformações lineares Y = aX + b, decomposição da variância total (entre grupos + dentro de grupos) e desigualdade de Cauchy-Schwarz para |r| ≤ 1.
+- Problema-Marco: Realizar análise exploratória completa de um dataset multivariado calculando quantis, medidas robustas, coeficientes de assimetria/curtose e matriz de associação entre variáveis qualitativas e quantitativas.
+### Macrotema 7.2: Fundamentos Axiomáticos da Probabilidade
+- Trilha: TRL-04 | Complexidade: 3/5 | Pré-requisitos Diretos: 1.8, 2.4
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-33 [Intuição/Cálculo] (Caps. 1–3); BIB-34 [Rigor/Prova] (Caps. 1–3); BIB-35 [Rigor/Prova] (Cap. 1)
+- Subtemas:
+- Espaço amostral Ω, σ-álgebra de eventos F e espaços mensuráveis
+- Axiomas de Kolmogorov para a medida de probabilidade P e suas propriedades elementares
+- Continuidade da medida de probabilidade (limites de sequências crescentes e decrescentes de eventos, Lema de Borel-Cantelli)
+- Desigualdades de Boole e de Bonferroni e inclusão-exclusão probabilística
+- Probabilidade condicional, regra do produto, partições do espaço amostral, Teorema da Probabilidade Total e Teorema de Bayes
+- Independência estocástica de dois eventos e independência mútua de famílias de eventos
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Axiomas de Kolmogorov, continuidade da probabilidade para sequências monótonas de eventos, Teorema da Probabilidade Total, Fórmula de Bayes e distinção entre independência dois a dois vs. independência mútua (contraexemplo de Bernstein).
+- Problema-Marco: Demonstrar as desigualdades de Bonferroni e a continuidade da medida de probabilidade a partir dos axiomas e resolver problemas de atualização Bayesiana sequencial.
+### Macrotema 7.3: Variáveis Aleatórias Unidimensionais e Distribuições Paramétricas
+- Trilha: TRL-04 | Complexidade: 3/5 | Pré-requisitos Diretos: 5.2, 5.5, 7.2
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-33 [Intuição/Cálculo] (Caps. 4–6, 8–9); BIB-34 [Rigor/Prova] (Caps. 4–5); BIB-35 [Rigor/Prova] (Cap. 2)
+- Subtemas:
+- Definição formal de variável aleatória X: Ω → ℝ (mensurabilidade) e Função de Distribuição Acumulada (FDA / CDF) e suas propriedades caracterizadoras
+- Variáveis aleatórias discretas (Função Massa de Probabilidade — PMF), contínuas (Função Densidade de Probabilidade — PDF) e mistas
+- Transformações de uma variável aleatória Y = g(X) (método da FDA e teorema da mudança de variável com derivada monótona e por partes)
+- Modelos Discretos: Bernoulli, Binomial, Geométrica, Binomial Negativa (Pascal), Hipergeométrica, Uniforme Discreta e Poisson (como limite da Binomial e postulados de Poisson)
+- Modelos Contínuos: Uniforme Contínua, Exponencial (propriedade de perda de memória e taxa de falha / hazard rate), Gama, Erlang, Weibull, Beta, Cauchy, Laplace, Log-Normal, Normal (Gaussiana), Qui-Quadrado (χ²), t de Student e F de Snedecor
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Caracterização da propriedade de falta de memória da distribuição Exponencial, convergência da Binomial para Poisson (np → λ) e relação entre as distribuições Normal, χ², t de Student e F.
+- Problema-Marco: Derivar analiticamente a densidade de transformações não-monótonas (ex.: Y = X² para X ~ N(0,1) gerando χ²_1 e Y = Φ(X) via Transformação Integral de Probabilidade).
+### Macrotema 7.4: Vetores Aleatórios, Distribuições Conjuntas e Transformações Multivariadas
+- Trilha: TRL-04 | Complexidade: 4/5 | Pré-requisitos Diretos: 3.5, 5.9, 5.10, 7.3
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-33 [Intuição/Cálculo] (Caps. 5, 10); BIB-34 [Rigor/Prova] (Cap. 6); BIB-35 [Rigor/Prova] (Cap. 2.4–2.6)
+- Subtemas:
+- Função de distribuição conjunta, PMF conjunta e PDF conjunta para vetores aleatórios (X₁, ..., X_n)
+- Distribuições marginais e distribuições condicionais discretas e contínuas
+- Independência de variáveis aleatórias e fatoração da distribuição conjunta
+- Distribuição da soma, produto e quociente de variáveis aleatórias independentes (integral de convolução)
+- Transformações de vetores aleatórios: método do Jacobiano em ℝⁿ
+- Estatísticas de Ordem (X_(1) ≤ ... ≤ X_(n)): distribuição conjunta, distribuição do mínimo, do máximo, da amplitude e dos quantis amostrais
+- Distribuição Multinomial e Distribuição Normal Bivariada e Multivariada N(μ, Σ)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Fórmula da convolução de densidades, teorema da mudança de variáveis multivariada pelo módulo do determinante Jacobiano e densidade da k-ésima estatística de ordem.
+- Problema-Marco: Provar que se X, Y ~ N(0,1) independentes, então U = X² + Y² ~ Exp(1/2) e V = X/Y ~ Cauchy(0,1) pelo método do Jacobiano multivariado.
+### Macrotema 7.5: Esperança, Momentos, Funções Geradoras e Desigualdades Probabilísticas
+- Trilha: TRL-04 | Complexidade: 4/5 | Pré-requisitos Diretos: 5.12, 7.4
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-33 [Intuição/Cálculo] (Cap. 7); BIB-34 [Rigor/Prova] (Caps. 7–8); BIB-35 [Rigor/Prova] (Caps. 3–4)
+- Subtemas:
+- Esperança matemática E[X] e Lei do Estatístico Inconsciente E[g(X)], linearidade da esperança e esperança via integral da função de sobrevivência
+- Variância, propriedades da variância, covariância, matriz de variância-covariância Σ e coeficiente de correlação ρ
+- Esperança condicional E[X|Y] como variável aleatória, propriedades de projeção e Lei da Esperança Iterada (E[E[X|Y]] = E[X])
+- Variância condicional Var(X|Y) e Lei da Variância Total (Var(X) = E[Var(X|Y)] + Var(E[X|Y]))
+- Momentos simples e centrais, Função Geradora de Probabilidades, Função Geradora de Momentos M_X(t) = E[e^(tX)], Função Geradora de Cumulantes e Função Característica φ_X(t) = E[e^(itX)]
+- Desigualdades de concentração e cauda: Desigualdade de Markov, Chebyshev, Cauchy-Schwarz, Jensen, Chernoff, Hoeffding e Mill
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Lei da Esperança Iterada, Lei da Variância Total, demonstração das desigualdades de Markov, Chebyshev, Jensen e Hoeffding, e unicidade da Função Geradora de Momentos.
+- Problema-Marco: Calcular esperança e variância de somas aleatórias N-indexadas (processos compostos de Poisson) usando condicionamento iterado e derivar cotas exponenciais de Chernoff para somas de Bernoulli.
+### Macrotema 7.6: Convergência Estocástica e Teoremas Limite
+- Trilha: TRL-04 | Complexidade: 4/5 | Pré-requisitos Diretos: 7.5
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-34 [Rigor/Prova] (Cap. 8); BIB-35 [Rigor/Prova] (Cap. 5)
+- Subtemas:
+- Modos de convergência de sequências de variáveis aleatórias: convergência em probabilidade, convergência quase certa (com probabilidade 1), convergência em distribuição (fraca) e convergência em média r-ésima (L^r / média quadrática L²)
+- Diagrama de implicações e contraexemplos entre os modos de convergência
+- Teorema do Mapeamento Contínuo, Lema de Slutsky e o Método Delta (univariado e multivariado)
+- Lei Fraca dos Grandes Números (Khinchin/Chebyshev) e Lei Forte dos Grandes Números (Borel/Kolmogorov)
+- Teorema Central do Limite (Lindeberg-Lévy e multivariado), aproximação normal com correção de continuidade e cota de erro de Berry-Esseen
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Hierarquia entre convergência quase certa, L², em probabilidade e em distribuição (com contraexemplos para as recíprocas), Lema de Slutsky, Método Delta e Teorema Central do Limite.
+- Problema-Marco: Aplicar o Método Delta multivariado para obter a distribuição assintótica de razões de médias amostrais e demonstrar a Lei Fraca dos Grandes Números via Desigualdade de Chebyshev.
+### Macrotema 7.7: Processos Estocásticos, Simulação e Teoria da Informação
+- Trilha: TRL-04 | Complexidade: 4/5 | Pré-requisitos Diretos: 3.10, 7.5
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-34 [Rigor/Prova] (Caps. 9–10); BIB-35 [Rigor/Prova] (Caps. 23–24); BIB-24 [Algorítmica] (Cap. 7.2.2.2)
+- Subtemas:
+- Cadeias de Markov de tempo discreto: propriedade Markoviana, matriz de probabilidades de transição, equações de Chapman-Kolmogorov, classificação de estados (acessibilidade, comunicação, irredutibilidade, periodicidade, estados recorrentes e transientes), distribuição estacionária, ergodicidade e cadeias reversíveis
+- Processos de Contagem e Processo de Poisson homogêneo e não-homogêneo (distribuição dos tempos de chegada e entre chegadas, divisão e superposição de processos de Poisson)
+- Cadeias de Markov de tempo contínuo e processos de nascimento e morte (Teoria das Filas básica)
+- Passeios aleatórios (Random Walks), problema da ruína do jogador, Martingales, tempos de parada e Teorema da Parada Opcional de Doob
+- Métodos de Simulação de Monte Carlo e técnicas de redução de variância (variáveis antitéticas, variáveis de controle, amostragem por importância e condicionamento)
+- Teoria da Informação: Entropia de Shannon, entropia conjunta e condicional, Informação Mútua e Divergência de Kullback-Leibler (entropia relativa)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Equações de Chapman-Kolmogorov, Teorema Ergódico para Cadeias de Markov finitas irredutíveis aperiódicas, Teorema da Parada Opcional de Doob e não-negatividade da Divergência KL (Desigualdade de Gibbs).
+- Problema-Marco: Encontrar a distribuição estacionária e tempos médios de absorção de uma Cadeia de Markov e implementar um estimador de Monte Carlo com variáveis de controle e amostragem por importância.
+### Macrotema 7.8: Inferência Estatística Não-Paramétrica, Bootstrap e Estimação Paramétrica
+- Trilha: TRL-04 | Complexidade: 4/5 | Pré-requisitos Diretos: 7.1, 7.6
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-32 [Intuição/Cálculo] (Caps. 10–11); BIB-35 [Rigor/Prova] (Caps. 6–9)
+- Subtemas:
+- Modelos estatísticos paramétricos e não-paramétricos, amostras aleatórias e estatísticas
+- Função de Distribuição Empírica F̂_n, propriedades e Desigualdade de Dvoretzky-Kiefer-Wolfowitz (envelope de confiança não-paramétrico)
+- Funcionais estatísticos, estimadores Plug-in, método Jackknife e o método Bootstrap (não-paramétrico e paramétrico, intervalos de confiança Bootstrap por percentil, normal e pivotal)
+- Estimação pontual paramétrica: viés (bias), erro padrão, Erro Quadrático Médio (MSE = Viés² + Variância) e consistência assintótica
+- Método dos Momentos e Estimadores de Máxima Verossimilhança (MLE)
+- Propriedades do MLE: invariância funcional, consistência, normalidade assintótica e eficiência assintótica
+- Suficiência estatística (Teorema da Fatoração de Halmos-Savage, estatística suficiente minimal, Teorema de Rao-Blackwell), Informação de Fisher I(θ) e a Desigualdade de Cramér-Rao (LIMV / UMVUE)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Desigualdade de Dvoretzky-Kiefer-Wolfowitz (DKW), normalidade assintótica do MLE com variância inversa à Informação de Fisher I(θ)⁻¹, Teorema da Fatoração de Neyman-Fisher e Desigualdade de Cramér-Rao.
+- Problema-Marco: Derivar o MLE e o limite inferior de Cramér-Rao para famílias exponenciais multiparamétricas e implementar intervalos de confiança Bootstrap (pivotal e percentil) comparando sua cobertura empírica.
+### Macrotema 7.9: Testes de Hipóteses, Inferência Bayesiana e Teoria da Decisão
+- Trilha: TRL-04 | Complexidade: 5/5 | Pré-requisitos Diretos: 7.8
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-32 [Intuição/Cálculo] (Caps. 12–15); BIB-35 [Rigor/Prova] (Caps. 10–12, 24)
+- Subtemas:
+- Formulação de testes de hipóteses (H₀ vs. H₁), região crítica, Erro Tipo I (nível de significância α), Erro Tipo II (β), função poder do teste e p-valor
+- Lema Fundamental de Neyman-Pearson e testes uniformemente mais poderosos (UMP)
+- Testes assintóticos gerais: Teste de Wald, Teste Escore (Rao) e Teste da Razão de Verossimilhança (estatística de Wilks)
+- Testes clássicos normais (testes Z, t de Student para uma e duas amostras, pareado, F para variâncias, ANOVA de um fator), Teste Qui-Quadrado de Pearson (aderência, homogeneidade e independência), Teste de Kolmogorov-Smirnov e testes não-paramétricos (Sinal, Wilcoxon, Mann-Whitney)
+- Múltiplos testes de hipóteses: Taxa de Erro Familiar (FWER — Correção de Bonferroni) e Taxa de Falsas Descobertas (FDR — Procedimento de Benjamini-Hochberg)
+- Construção de Intervalos de Confiança (quantidades pivotais, inversão de testes e intervalos assintóticos)
+- Inferência Bayesiana: distribuição a priori (conjugadas, impróprias e não-informativas de Jeffreys), distribuição a posteriori, estimadores de Bayes (MAP e média a posteriori), intervalos de credibilidade, Fatores de Bayes e aproximação normal a posteriori
+- Simulação via Cadeias de Markov Monte Carlo (MCMC): Algoritmo de Metropolis-Hastings e Amostrador de Gibbs
+- Teoria da Decisão Estatística: funções de perda, risco frequentista, risco de Bayes, regras minimax, admissibilidade e o Paradoxo/Estimador de James-Stein
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Demonstração do Lema de Neyman-Pearson, Teorema de Wilks (-2 log Λ → χ²_r), controle de FDR por Benjamini-Hochberg e dominância do Estimador de James-Stein sobre a média amostral em dimensão d ≥ 3.
+- Problema-Marco: Construir o teste UMP via Neyman-Pearson para hipóteses simples e implementar um amostrador de Metropolis-Hastings e Gibbs para inferência Bayesiana em um modelo hierárquico.
+### Macrotema 7.10: Modelos Lineares, Inferência Causal e Aprendizado Estatístico (Machine Learning)
+- Trilha: TRL-04 | Complexidade: 5/5 | Pré-requisitos Diretos: 3.8, 4.4, 6.2, 7.9
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-35 [Rigor/Prova] (Caps. 13–22); BIB-32 [Intuição/Cálculo] (Cap. 16)
+- Subtemas:
+- Regressão Linear Simples e Múltipla: formulação matricial, Estimador de Mínimos Quadrados Ordinários (OLS), Teorema de Gauss-Markov, inferência nos parâmetros, análise de resíduos, alavancagem e multicolinearidade
+- Seleção de modelos e regularização: R² ajustado, validação cruzada (leave-one-out e k-fold), AIC de Akaike, BIC de Schwarz, Ridge e Lasso
+- Modelos Lineares Generalizados (GLM) e Regressão Logística (estimação de máxima verossimilhança via Newton-Raphson / Iteratively Reweighted Least Squares)
+- Estimação de densidade e regressão não-paramétrica: histogramas, Estimadores de Núcleo (Kernel Density Estimation — KDE), regressão de Nadaraya-Watson, polinômios locais, Splines de suavização e seleção de largura de banda (trade-off viés-variância)
+- Inferência Causal: Modelo de Resultados Potenciais de Neyman-Rubin (contrafactuais), efeito causal médio (ATE), viés de seleção, variáveis confundidoras, estudos observacionais, escore de propensão e Grafos Acíclicos Dirigidos Causais (DAGs, d-separação, critério back-door e operador de intervenção do(X=x) de Pearl)
+- Classificação Supervisionada e Aprendizado Não-Supervisionado: Regra ótima de Bayes, Análise Discriminante Linear e Quadrática (LDA/QDA), K-Vizinhos Mais Próximos (k-NN), Árvores de Classificação e Regressão (CART), Máquinas de Vetores de Suporte (SVM), métodos de Ensemble (Bagging, Random Forests, Boosting) e Clustering (k-means e hierárquico)
+- Grafos não-direcionados e Modelos Gráficos Markovianos (independência condicional em grafos e modelos log-lineares)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Demonstração do Teorema de Gauss-Markov (BLUE), decomposição Viés²-Variância do risco preditivo, critério back-door de Pearl para identificação causal e otimalidade da Regra de Classificação de Bayes.
+- Problema-Marco: Implementar regressão logística via IRLS (Newton-Raphson) e regressão não-paramétrica KDE/Nadaraya-Watson com seleção de bandwidth por validação cruzada leave-one-out.
+### Macrotema 7.11: Matemática Financeira Quantitativa e Títulos de Renda Fixa
+- Trilha: TRL-04 | Complexidade: 5/5 | Pré-requisitos Diretos: 1.12, 5.3, 5.13, 7.5, 7.7
+- Modalidades de Prática: [Cálculo/Algébrico], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-36 [Aplicação/Referência] (Partes I–VII)
+- Subtemas:
+- Valor do dinheiro no tempo (capitalização discreta e contínua), precificação de títulos de renda fixa (bonds com cupom e zero-coupon), convenções de contagem de dias (Actual/Actual, 30/360) e juros corridos (accrued interest — preço limpo vs. preço sujo)
+- Medidas convencionais de retorno: Current Yield, Yield to Maturity (YTM), Yield to Call, Yield to Put, Yield to Worst, Yield de carteira e Análise de Retorno Total (horizonte de investimento e risco de reinvestimento)
+- Estrutura a Termo da Taxa de Juros (Term Structure of Interest Rates): curva de rendimentos (yield curve), construção teórica da curva de taxas à vista (spot rates) via Bootstrapping, taxas a termo implícitas (forward rates), fatores de desconto e teorias econômicas da estrutura a termo (expectativas puras, preferência pela liquidez e segmentação de mercado)
+- Volatilidade de preços e medidas de risco de taxa de juros via Expansão de Taylor: Valor de um Ponto-Base (PVBP / DV01), Duration de Macaulay, Duration Modificada, Dollar Duration, Duration de Portfólio, Key Rate Duration (risco de mudanças não-paralelas da curva) e Convexidade (aproximação de 2ª ordem)
+- Títulos com opções embutidas (callable, putable e conversíveis): decomposição do valor do título, convexidade negativa e Effective Duration / Effective Convexity
+- Modelagem estocástica de taxas de juros e árvores binomiais: modelos de equilíbrio e de não-arbitragem (Vasicek, Cox-Ingersoll-Ross — CIR, Hull-White, Black-Derman-Toy, Ho-Lee), calibração de árvores binomiais de taxas de juros com volatilidade informada, retroindução e cálculo do Option-Adjusted Spread (OAS)
+- Matemática de produtos securitizados e hipotecários (MBS / ABS): fluxos de caixa de hipotecas amortizáveis, risco de pré-pagamento (contraction e extension risk), métricas de velocidade de pré-pagamento (SMM, CPR e benchmark PSA), estruturação em Tranches (CMOs — sequenciais, PAC, TAC, Z-bonds) e simulação de Monte Carlo para avaliação de MBS
+- Risco de crédito e derivativos de renda fixa: spreads de crédito, probabilidade de default, taxa de recuperação, matrizes de transição de rating, precificação de notas de taxa flutuante (floaters, inverse floaters, caps e floors), futuros de taxas de juros/títulos do Tesouro (fator de conversão e cheapest-to-deliver), Swaps de Taxa de Juros (precificação e duration de um swap) e Credit Default Swaps (CDS)
+- Estratégias quantitativas de gestão de carteiras de renda fixa: estratégias de posicionamento na curva (bullet, barbell e ladder), imunização de passivos de período único e múltiplo (condições de Redington) e correspondência de fluxo de caixa (cash flow matching / programação linear)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Relação analítica entre taxas spot, forward rates e fatores de desconto, aproximação de variação percentual de preço ΔP/P ≈ -D_mod Δy + (1/2) C (Δy)², e condições de imunização de Redington.
+- Problema-Marco: Implementar um motor de precificação de renda fixa contendo: bootstrapping da curva spot/forward, cálculo de YTM via Newton-Raphson, DV01, Duration, Convexidade e árvore binomial calibrada para cálculo de OAS em títulos callable.
+## NÍVEL 8: MATEMÁTICA CONCRETA, COMBINATÓRIA ANALÍTICA E ANÁLISE DE ALGORITMOS
+### Macrotema 8.1: Somas, Recorrências e Cálculo de Diferenças Finitas
+- Trilha: TRL-03 | Complexidade: 3/5 | Pré-requisitos Diretos: 2.7, 4.3, 5.4
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-18 [Rigor/Prova] (Caps. 1–2); BIB-20 [Algorítmica] (Cap. 1.2.3)
+- Subtemas:
+- Manipulação algébrica de somatórios simples e múltiplos e uso sistemático da Notação de Iverson [P(k)]
+- Método do repertório para resolução de recorrências e somatórios
+- Cálculo de Diferenças Finitas: operador diferença Δf(x) = f(x+1) - f(x) e operador deslocamento Ef(x) = f(x+1)
+- Potências fatoriais crescentes e decrescentes (x^(m) e x_m) e propriedades de exponenciais discretas
+- Somação indefinida ∑f(x)δx, Teorema Fundamental do Cálculo Finito e regra de Somação por Partes (∑uΔv = uv - ∑EvΔu)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Teorema Fundamental do Cálculo Finito ∑_a^b Δf(x)δx = f(b) - f(a), regra da diferença de potências fatoriais Δ(x^(m)) = m x^(m-1) e Fórmula de Somação por Partes de Abel.
+- Problema-Marco: Resolver recorrências não-triviais (como o Problema de Josephus generalizado) usando o Método do Repertório e calcular somas fechadas de polinômios e produtos discreto-exponenciais via Cálculo Finito.
+### Macrotema 8.2: Funções Inteiras e Teoria dos Números Concreta
+- Trilha: TRL-03 | Complexidade: 4/5 | Pré-requisitos Diretos: 4.2, 8.1
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-18 [Rigor/Prova] (Caps. 3–4)
+- Subtemas:
+- Funções piso ⌊x⌋ e teto ⌈x⌉: propriedades algébricas, conversão de desigualdades, somatórios e recorrências com pisos e tetos
+- Espectros de números reais e Teorema de Beatty (partições de ℕ por espectros irracionais)
+- Árvore de Stern-Brocot, Sequências de Farey, aproximação racional ótima e representação de números reais na árvore
+- Aritmética de contínuos (continuants), polinômios de Euler e frações contínuas regulares e periódicas
+- Somas sobre divisores, convolução de Dirichlet, Função Totiente de Euler φ(n), Função de Möbius μ(n) e Fórmulas de Inversão de Möbius
+- Resíduos quadráticos, Símbolo de Legendre, Símbolo de Jacobi e Lei da Reciprocidade Quadrática
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Teorema de Beatty, propriedades da Árvore de Stern-Brocot, Fórmula de Inversão de Möbius e Lei da Reciprocidade Quadrática de Gauss.
+- Problema-Marco: Demonstrar identidades de somatórios envolvendo pisos/tetos (como a Lei de Reciprocidade de Dedekind/pisos) e aplicar Inversão de Möbius para contar palavras aperiódicas (polinômios irredutíveis sobre corpos finitos).
+### Macrotema 8.3: Coeficientes Binomiais Avançados, Séries Hipergeométricas e Números Especiais
+- Trilha: TRL-03 | Complexidade: 4/5 | Pré-requisitos Diretos: 8.1
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-18 [Rigor/Prova] (Caps. 5–6); BIB-20 [Algorítmica] (Cap. 1.2.6–1.2.8)
+- Subtemas:
+- As 10 identidades fundamentais dos coeficientes binomiais (simetria, absorção, adição, soma paralela, soma na coluna, convolução de Vandermonde, trinomial)
+- Fórmulas de Inversão Binomial e polinômios de diferenças
+- Séries Hipergeométricas Gerais pFq(a₁,...,a_p; b₁,...,b_q; z): redução de somas binomiais à forma canônica hipergeométrica (identidades de Gauss, Kummer, Saalschütz, Dixon e Clausen)
+- Somação mecânica: Algoritmo de Gosper para somação hipergeométrica indefinida e Método de Wilf-Zeilberger (WZ) para prova certificada de identidades definidas
+- Números de Stirling de 1ª espécie [n k] (ciclos de permutações e conversão de potências fatoriais em potências ordinárias) e de 2ª espécie {n k} (partições de conjuntos e conversão de potências ordinárias em potências fatoriais)
+- Dualidade dos números de Stirling (estendidos para inteiros negativos)
+- Números de Euler ⟨n k⟩ (subidas em permutações e Identidade de Worpitzky) e de 2ª ordem
+- Números Harmônicos H_n e generalizados H_n^(r), Números de Bernoulli B_n, Polinômios de Bernoulli, Números de Fibonacci F_n (Teorema de Zeckendorf) e Números de Catalão C_n
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Convolução de Vandermonde, fórmulas de conversão entre potências ordinárias e fatoriais via Números de Stirling, Identidade de Worpitzky para Números de Euler e Teorema de Zeckendorf.
+- Problema-Marco: Reduzir somas binomiais alternadas à forma hipergeométrica _pF_q e construir certificados WZ para provar identidades combinatórias fechadas.
+### Macrotema 8.4: Funções Geradoras e Probabilidade Discreta Avançada
+- Trilha: TRL-03 | Complexidade: 4/5 | Pré-requisitos Diretos: 5.12, 7.5, 8.3
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-18 [Rigor/Prova] (Caps. 7–8); BIB-20 [Algorítmica] (Cap. 1.2.9–1.2.10)
+- Subtemas:
+- Operações em séries formais de potências: adição, deslocamento, derivação, integração, convolução e composição
+- Funções Geradoras Ordinárias (OGFs) para sequências não-rotuladas, decomposição em frações parciais para extração de coeficientes [z^n]G(z) e resolução sistemática de recorrências
+- Funções Geradoras Exponenciais (EGFs) para estruturas rotuladas e convolução binomial
+- Funções Geradoras de Dirichlet para sequências aritméticas multiplicativas (conexão com a Função Zeta de Riemann ζ(s))
+- Funções Geradoras de Probabilidade (PGFs): cálculo algébrico de média, variância e cumulantes via derivadas da PGF em z = 1
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Teorema da expansão de funções geradoras racionais, produto de EGFs como convolução binomial e fórmulas E[X] = G'(1) e Var(X) = G''(1) + G'(1) - (G'(1))².
+- Problema-Marco: Derivar a função geradora e a fórmula fechada dos Números de Catalão (via recorrência quadrática) e calcular esperança e variância do tempo de espera em lançamentos de moedas até padrões específicos (Jogo de Penney) via funções geradoras.
+### Macrotema 8.5: Assintótica Discreta e Fórmula de Euler-Maclaurin
+- Trilha: TRL-03 | Complexidade: 4/5 | Pré-requisitos Diretos: 5.12, 8.3
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-18 [Rigor/Prova] (Cap. 9); BIB-20 [Algorítmica] (Cap. 1.2.11); BIB-19 [Rigor/Prova] (Apêndice A.2)
+- Subtemas:
+- Hierarquia assintótica de funções (escalas logarítmicas, polinomiais, exponenciais e superexponenciais)
+- Álgebra de expansões assintóticas com símbolos de Landau (O, o, ~, Ω, Θ)
+- Fórmula de Somação de Euler-Maclaurin com termo de resto integral: aproximação de somas discretas por integrais mais correções com Números de Bernoulli
+- Derivação assintótica completa da Fórmula de Stirling para n!, aproximação de números harmônicos (constante de Euler-Mascheroni γ) e estimativa de caudas de somatórios
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Fórmula de Somação de Euler-Maclaurin, expansão assintótica de H_n = ln n + γ + 1/(2n) - 1/(12n²) + O(n⁻⁴) e Fórmula de Stirling com série de Bernoulli.
+- Problema-Marco: Derivar expansões assintóticas precisas de somatórios binomiais centrais e números harmônicos generalizados utilizando o método de puxar a cauda (tail-exchange) e Euler-Maclaurin.
+### Macrotema 8.6: O Método Simbólico na Enumeração Combinatória
+- Trilha: TRL-03 | Complexidade: 5/5 | Pré-requisitos Diretos: 4.5, 4.6, 8.4
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-19 [Rigor/Prova] (Parte A: Caps. I–III)
+- Subtemas:
+- Classes combinatórias abstratas, funções de tamanho e isomorfismo combinatório
+- Construções admissíveis não-rotuladas: soma disjunta (+), produto cartesiano (×), sequência (SEQ), conjunto (PSET), multiconjunto (MSET) e ciclo direcionado (CYC)
+- Teorema de Transferência Simbólica para Funções Geradoras Ordinárias (incluindo operadores exponenciais de Pólya para MSET, PSET e CYC)
+- Construções admissíveis para estruturas rotuladas: produto rotulado (A ★ B), sequência (SEQ), conjunto (SET), ciclo (CYC), produto encaixado (boxed product) e substituição
+- Teorema de Transferência Simbólica para Funções Geradoras Exponenciais (fórmula exponencial exp(A(z)) para componentes conexas)
+- Aplicações do método simbólico: palavras e linguagens formais, composições e partições de inteiros (diagramas de Ferrers), decomposição de permutações em ciclos e registros, árvores planas/binárias/Cayley (Fórmula de Inversão de Lagrange) e mapeamentos funcionais aleatórios
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Dicionários simbólicos OGF e EGF (SEQ, MSET, PSET, CYC, SET), Fórmula Exponencial para grafos/estruturas rotuladas conexas e Fórmula de Inversão de Lagrange para árvores.
+- Problema-Marco: Especificar simbolicamente classes combinatórias complexas (como árvores não-rotuladas de Pólya, permutações sem ciclos curtos e mapeamentos funcionais) e deduzir suas equações funcionais geradoras.
+### Macrotema 8.7: Combinatória Analítica Complexa e Leis Limite
+- Trilha: TRL-03 | Complexidade: 5/5 | Pré-requisitos Diretos: 1.9, 5.11, 8.5, 8.6
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-19 [Rigor/Prova] (Partes B e C: Caps. IV–IX)
+- Subtemas:
+- Funções geradoras como funções analíticas de variável complexa z ∈ ℂ, raio de convergência, localização das singularidades dominantes e Teorema de Pringsheim (para séries com coeficientes não-negativos)
+- Polos e funções racionais e meromorfas: extração assintótica de coeficientes via Teorema dos Resíduos de Cauchy
+- Análise de Singularidades (Singularity Analysis de Flajolet-Odlyzko): contornos de Hankel e Teorema de Transferência para singularidades algébrico-logarítmicas da forma (1 - z/ρ)^(-α) log^k(1 - z/ρ)
+- Aplicação da Análise de Singularidades a esquemas universais de árvores simples, funções implícitas e equações diferenciais
+- Método do Ponto de Sela (Saddle-Point Method): contornos de descida mais íngreme no plano complexo, admissibilidade de Hayman e assintótica de funções inteiras e de rápido crescimento (números de Bell, involuções e partições de inteiros de Hardy-Ramanujan)
+- Funções Geradoras Multivariadas (BGFs) para análise de parâmetros aditivos em estruturas combinatórias
+- Perturbação de singularidades (meromorfa e algébrica), Teorema das Potências Quase-Aleatórias (Quasi-Powers Theorem de Hwang) e leis limite Gaussianas, de Poisson e de Airy em combinatória e algoritmos
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Teorema de Pringsheim, Teorema de Transferência de Flajolet-Odlyzko para singularidades algébrico-logarítmicas, Método do Ponto de Sela e Teorema das Potências Quase-Aleatórias de Hwang.
+- Problema-Marco: Extrair a assintótica completa do número de árvores binárias/Catalão e provar a normalidade assintótica (Lei Limite Gaussiana) do número de folhas ou comprimento de caminho interno em árvores simples via perturbação de singularidades.
+### Macrotema 8.8: Estruturas de Dados, Ordenação, Busca e Algoritmos Combinatórios (TAOCP Vols. 1, 3, 4A e 4B)
+- Trilha: TRL-03 | Complexidade: 5/5 | Pré-requisitos Diretos: 4.1, 4.5, 4.6, 6.7, 7.7, 8.4, 8.5
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal], [Implementação Computacional]
+- Bibliografia e Capítulos: BIB-20 [Algorítmica] (Cap. 2); BIB-22 [Algorítmica] (Caps. 5–6); BIB-23 [Algorítmica] (Cap. 7.1–7.2.1); BIB-24 [Algorítmica] (Cap. 7.2.2)
+- Subtemas:
+- Estruturas de informação fundamentais (TAOCP Vol. 1): listas lineares (pilhas, filas, deques), alocação sequencial vs. encadeada, listas circulares e duplamente encadeadas, ordenação topológica, matrizes esparsas, representação de árvores e grafos em memória, alocação dinâmica (first-fit, best-fit, buddy system) e coleta de lixo (garbage collection)
+- Combinatória de permutações (TAOCP Vol. 3): tabelas de inversão, estrutura cíclica, permutações de multiconjuntos, corridas (runs) e Números Eulerianos, e a Correspondência de Robinson-Schensted-Knuth (RSK) com Quadros de Young (Young Tableaux e fórmula do comprimento do gancho / hook-length formula)
+- Análise matemática exata de algoritmos de ordenação (TAOCP Vol. 3): ordenação por inserção, Shellsort, Quicksort (análise exata de comparações e trocas), Heapsort, Mergesort, ordenação por distribuição (Radix Sort), redes de ordenação (0-1 principle e Batcher's odd-even mergesort) e ordenação externa
+- Análise matemática de algoritmos de busca (TAOCP Vol. 3): busca sequencial e binária, árvores binárias de busca (análise de altura e caminho interno), árvores binárias de busca ótimas (programação dinâmica de Knuth), árvores balanceadas (AVL, Red-Black, B-trees), Tries digitais (Patricia trees) e análise probabilística e combinatória de Hashing (encadeamento separado, endereçamento aberto, sondagem linear e conexão com o problema do estacionamento e árvores de Cayley)
+- Truques bit a bit e funções booleanas avançadas (TAOCP Vol. 4A): aritmética sub-palavra (broadword computing), códigos de Gray, cadeias booleanas, funções simétricas/monótonas/Horn/Krom (2-SAT), Diagramas de Decisão Binária Ordenados (BDDs) e Diagramas de Decisão com Supressão de Zeros (ZDDs)
+- Geração exaustiva de objetos combinatórios (TAOCP Vol. 4A): geração lexicográfica e por mudança mínima (Gray codes) de todas as n-tuplas, permutações (algoritmos de Plain Changes / Steinhaus-Johnson-Trotter e Heap), combinações, partições de inteiros, partições de conjuntos (códigos de crescimento restrito) e todas as árvores livres e enraizadas
+- Backtracking, Dancing Links e Satisfatibilidade Booleana (TAOCP Vol. 4B): estrutura geral de Backtracking (n-rainhas, passeio do cavalo, palavras cruzadas), estimativa estocástica do tamanho de árvores de busca (Método de Monte Carlo de Knuth), Problemas de Cobertura Exata (Exact Cover, Algoritmo X e estrutura de ponteiros Dancing Links — DLX / DLXC para poliminós, Sudoku e empacotamento), e algoritmos modernos de Satisfatibilidade Booleana — SAT (Resolução, algoritmo DPLL, aprendizagem de cláusulas dirigida por conflitos — CDCL, literais vigiados / watched literals, heurísticas de reinício e transição de fase em k-SAT aleatório)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Análise exata do número médio de comparações do Quicksort (2(n+1)H_n - 4n), análise de sondagem linear em Hashing, Correspondência RSK, canonicidade dos OBDDs e mecânica de aprendizagem de cláusulas com 1-UIP no CDCL.
+- Problema-Marco: Implementar um solver de Cobertura Exata usando Dancing Links (DLX) e um resolvedor SAT moderno com watched literals, propagação unitária e aprendizagem de cláusulas CDCL.
+## NÍVEL 9: ANÁLISE REAL (UMA E VÁRIAS VARIÁVEIS) E TOPOLOGIA DE ESPAÇOS MÉTRICOS
+### Macrotema 9.1: Axiomatização dos Números Reais como Corpo Ordenado Completo
+- Trilha: TRL-01 | Complexidade: 4/5 | Pré-requisitos Diretos: 2.5, 2.8, 5.1
+- Modalidades de Prática: [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-37 [Intuição/Cálculo] (Cap. 1); BIB-38 [Rigor/Prova] (Caps. I–II)
+- Subtemas:
+- Conjuntos finitos, infinitos, enumeráveis e não-enumeráveis sob rigor analítico
+- Axiomas algébricos de corpo e axiomas de corpo ordenado, módulo e desigualdade triangular
+- Conjuntos limitados superior e inferiormente, Supremo (sup) e Ínfimo (inf)
+- O Postulado de Dedekind (Axioma da Completude de ℝ) e falha da completude em ℚ
+- Propriedade Arquimediana de ℝ, densidade dos racionais ℚ e dos irracionais ℝ \ ℚ na reta real e o Princípio dos Intervalos Encaixados
+- Construção formal dos números reais (Cortes de Dedekind e classes de equivalência de Sequências de Cauchy em ℚ)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Caracterização ε-supremo (s = sup X ⇔ ∀ε > 0, ∃x ∈ X : s - ε < x ≤ s), Propriedade Arquimediana de ℝ, densidade de ℚ em ℝ e Princípio dos Intervalos Encaixados.
+- Problema-Marco: Demonstrar a existência e irracionalidade de √2 usando exclusivamente o Axioma do Supremo em ℝ e provar que inf(A + B) = inf A + inf B para conjuntos não-vazios limitados inferiormente.
+### Macrotema 9.2: Sequências e Séries de Números Reais sob Rigor Analítico
+- Trilha: TRL-01 | Complexidade: 4/5 | Pré-requisitos Diretos: 5.12, 9.1
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-37 [Intuição/Cálculo] (Caps. 2–3); BIB-38 [Rigor/Prova] (Caps. III–IV)
+- Subtemas:
+- Definição analítica de limite de sequência, unicidade, propriedades aritméticas e de ordem, e Teorema de Convergência Monótona
+- Subsequências, valores de aderência e o Teorema de Bolzano-Weierstrass em ℝ
+- Limite Superior (limsup) e Limite Inferior (liminf) de sequências reais limitadas e sua caracterização
+- Sequências de Cauchy e o Critério de Cauchy para convergência em ℝ
+- Séries numéricas infinitas: Critério de Cauchy para séries, testes de convergência (comparação, razão, raiz, condensação de Cauchy, Dirichlet e Abel)
+- Séries absolutamente e condicionalmente convergentes, produto de Cauchy de séries (Teorema de Mertens) e o Teorema da Reordenação de Riemann
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Demonstração do Teorema de Bolzano-Weierstrass em ℝ, equivalência entre sequências convergentes e sequências de Cauchy em ℝ, Teste de Condensação de Cauchy e Teorema da Reordenação de Riemann.
+- Problema-Marco: Demonstrar formalmente que limsup(x_n + y_n) ≤ limsup x_n + limsup y_n e provar que toda sequência contrativa (|x_{n+2} - x_{n+1}| ≤ c|x_{n+1} - x_n| com 0 ≤ c < 1) é de Cauchy e converge em ℝ.
+### Macrotema 9.3: Topologia da Reta Real
+- Trilha: TRL-01 | Complexidade: 4/5 | Pré-requisitos Diretos: 9.1, 9.2
+- Modalidades de Prática: [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-37 [Intuição/Cálculo] (Cap. 4); BIB-38 [Rigor/Prova] (Cap. V)
+- Subtemas:
+- Pontos interiores, conjuntos abertos na reta e teorema da estrutura dos abertos de ℝ (todo aberto na reta é união enumerável de intervalos abertos dois a dois disjuntos)
+- Pontos aderentes, fecho de um conjunto, conjuntos fechados e dualidade aberto-fechado
+- Pontos de acumulação, pontos isolados, fronteira, conjuntos densos e Teorema de Bolzano-Weierstrass para conjuntos infinitos limitados
+- Conjuntos compactos na reta real: equivalência entre fechado + limitado, compacidade por coberturas abertas (Teorema de Borel-Lebesgue / Heine-Borel) e compacidade sequencial
+- Conjuntos conexos na reta (caracterização como intervalos)
+- O Conjunto Ternário de Cantor: construção e demonstração de suas propriedades topológicas e de medida (compacto, perfeito, interior vazio, totalmente desconexo, não-enumerável e de medida nula)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Teorema da estrutura dos abertos da reta, Teorema de Borel-Lebesgue (Heine-Borel), caracterização dos conexos de ℝ como intervalos e propriedades topológicas/de medida do Conjunto de Cantor.
+- Problema-Marco: Demonstrar o Teorema de Borel-Lebesgue em ℝ (toda cobertura aberta de [a,b] admite subcobertura finita) usando o Axioma do Supremo e provar que o Conjunto de Cantor é perfeito, não-enumerável e tem medida exterior nula.
+### Macrotema 9.4: Limites, Continuidade, Continuidade Uniforme e Derivabilidade em ℝ
+- Trilha: TRL-01 | Complexidade: 4/5 | Pré-requisitos Diretos: 5.3, 9.3
+- Modalidades de Prática: [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-37 [Intuição/Cálculo] (Caps. 5–6); BIB-38 [Rigor/Prova] (Caps. VI–VIII)
+- Subtemas:
+- Definição ε-δ de limite funcional em pontos de acumulação e equivalência com a caracterização sequencial
+- Limites laterais, limites no infinito, limites infinitos e classificação das descontinuidades (1ª e 2ª espécie; o conjunto de descontinuidades de uma função monótona é no máximo enumerável)
+- Funções contínuas: caracterização local (ε-δ), sequencial e global/topológica (imagem inversa de aberto é aberto)
+- Funções contínuas em intervalos (Teorema do Valor Intermediário e inversão de funções contínuas injetivas) e em compactos (preservação de compacidade e Teorema de Weierstrass)
+- Continuidade uniforme, condição de Lipschitz e o Teorema de Heine-Cantor (toda função contínua num compacto é uniformemente contínua)
+- Derivabilidade na reta: definição analítica, aproximação linear, regras de derivação, derivada da inversa, extremos locais e Teorema de Rolle / Valor Médio de Lagrange e de Cauchy
+- Propriedade do valor intermediário da derivada (Teorema de Darboux: uma derivada não pode ter descontinuidades de 1ª espécie / salto)
+- Fórmula de Taylor infinitesimal (Resto de Peano) e global (Resto de Lagrange), funções analíticas e exemplo clássico de Weierstrass de uma função contínua em toda a reta que não possui derivada em nenhum ponto
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Caracterização topológica da continuidade (f⁻¹(A) aberto), Teorema de Heine-Cantor, Teorema de Darboux e comportamento da continuidade uniforme frente a sequências de Cauchy (preservação de Cauchy).
+- Problema-Marco: Demonstrar que uma função contínua em (a,b) é uniformemente contínua se, e somente se, admite extensão contínua ao compacto [a,b], e provar o Teorema de Darboux.
+### Macrotema 9.5: A Integral de Riemann-Darboux e o Teorema de Caracterização de Lebesgue
+- Trilha: TRL-01 | Complexidade: 5/5 | Pré-requisitos Diretos: 5.4, 9.4
+- Modalidades de Prática: [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-37 [Intuição/Cálculo] (Cap. 7); BIB-38 [Rigor/Prova] (Cap. IX)
+- Subtemas:
+- Partições e refinamentos, somas inferiores e superiores de Darboux, integral inferior e integral superior
+- Definição de função integrável à Riemann e critério de integrabilidade de Riemann-Darboux (S(f;P) - s(f;P) < ε)
+- Propriedades da integral (linearidade, aditividade no domínio, monotonia, integrabilidade do módulo e do produto) e Teoremas Fundamentais do Cálculo sob hipóteses mínimas
+- Oscilação de uma função num intervalo e num ponto
+- Conjuntos de conteúdo nulo (Jordan) e conjuntos de medida nula na reta (Lebesgue)
+- Teorema de Lebesgue para integrabilidade de Riemann: uma função limitada f: [a,b] → ℝ é Riemann-integrável se, e somente se, o conjunto de seus pontos de descontinuidade tem medida nula
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Critério de integrabilidade de Darboux, integrabilidade da composta φ ∘ f (com φ contínua e f integrável), e o Teorema de Lebesgue (descontinuidades de medida nula).
+- Problema-Marco: Analisar a integrabilidade à Riemann da Função de Dirichlet e da Função de Thomae (função régua, contínua nos irracionales e descontínua nos racionais) aplicando rigorosamente o Critério de Darboux e o Teorema de Lebesgue.
+### Macrotema 9.6: Sequências e Séries de Funções na Reta Real
+- Trilha: TRL-01 | Complexidade: 5/5 | Pré-requisitos Diretos: 5.12, 9.4, 9.5
+- Modalidades de Prática: [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-37 [Intuição/Cálculo] (Cap. 8); BIB-38 [Rigor/Prova] (Caps. X–XI)
+- Subtemas:
+- Convergência simples (pontual) vs. convergência uniforme (norma do supremo) e Critério de Cauchy Uniforme
+- Preservação da continuidade sob convergência uniforme e Teorema de Dini (convergência monótona de funções contínuas em compactos)
+- Passagem ao limite sob o sinal de integral e sob o sinal de derivada
+- Séries de funções (Teste M de Weierstrass) e séries de potências (raio de convergência de Cauchy-Hadamard, analiticidade, unicidade dos coeficientes e Teorema de Abel)
+- Famílias equicontínuas de funções, Teorema de Arzelà-Ascoli na reta e o Teorema da Aproximação Polinomial de Weierstrass
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Teorema de Dini, Teorema de permutação de limite e derivada (exigindo convergência uniforme de f'_n e convergência pontual de f_n em um ponto), Fórmula de Cauchy-Hadamard e Teorema de Arzelà-Ascoli.
+- Problema-Marco: Construir contraexemplos mostrando onde falha a permutação de limite com integral/derivada sob convergência apenas pontual e demonstrar o Teorema de Arzelà-Ascoli em C[a,b].
+### Macrotema 9.7: Teoria Geral dos Espaços Métricos e Aplicações Contínuas
+- Trilha: TRL-01 | Complexidade: 4/5 | Pré-requisitos Diretos: 3.8, 9.3, 9.4
+- Modalidades de Prática: [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-39 [Rigor/Prova] (Cap. 1)
+- Subtemas:
+- Definição axiomática de métrica e espaço métrico, subespaços métricos e métricas produto
+- Exemplos canônicos: espaços Euclidianos ℝⁿ (métricas d₁, d₂, d_∞), métrica discreta, espaços vetoriais normados, espaços com produto interno e espaços de funções limitadas B(X; ℝ) com a métrica da convergência uniforme (supremo)
+- Bolas abertas, bolas fechadas, esferas, conjuntos limitados, diâmetro de um conjunto e distância entre conjuntos
+- Isometrias, imersões isométricas, funções contínuas, funções Lipschitzianas, funções uniformemente contínuas e homeomorfismos
+- Métricas equivalentes e métricas topologicamente equivalentes, e caracterização das aplicações lineares contínuas entre espaços normados
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Desigualdades de Hölder e Minkowski para métricas L^p em ℝⁿ, equivalência das métricas d₁, d₂ e d_∞ em ℝⁿ e caracterização de continuidade de operadores lineares entre espaços normados (||Tx|| ≤ C||x||).
+- Problema-Marco: Demonstrar que uma aplicação linear T: E → F entre espaços vetoriais normados é contínua se, e somente se, é limitada na esfera unitária, e construir um operador linear descontínuo em um espaço normado de dimensão infinita.
+### Macrotema 9.8: Topologia, Limites e Conexidade em Espaços Métricos
+- Trilha: TRL-01 | Complexidade: 4/5 | Pré-requisitos Diretos: 9.7
+- Modalidades de Prática: [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-39 [Rigor/Prova] (Caps. 2–4)
+- Subtemas:
+- Conjuntos abertos, interior, vizinhanças, conjuntos fechados, fecho (aderência), pontos de acumulação, fronteira e conjuntos densos em espaços métricos gerais
+- Topologia induzida em subespaços métricos (abertos e fechados relativos) e caracterização global da continuidade via abertos, fechados e fecho
+- Limites de sequências em espaços métricos e relação entre conceitos topológicos e limites sequenciais (espaços de primeira enumerabilidade)
+- Limites de funções entre espaços métricos
+- Espaços métricos conexos: definição por cisões, preservação da conexidade por aplicações contínuas, propriedades de conjuntos conexos, componentes conexas e espaços totalmente desconexos
+- Conjuntos conexos por caminhos (arcos), espaços localmente conexos e equivalência entre conexidade e conexidade por caminhos para abertos de espaços normados
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Caracterização sequencial do fecho em espaços métricos, preservação de conexidade por funções contínuas, união de conexos com interseção não-vazia é conexa e equivalência entre conexidade e conexidade por caminhos em abertos de ℝⁿ.
+- Problema-Marco: Provar que o grupo linear geral GL(n; ℝ) é aberto e denso em M_n(ℝ) e determinar suas componentes conexas (det > 0 e det < 0).
+### Macrotema 9.9: Espaços Métricos Completos, Teorema de Banach e Categoria de Baire
+- Trilha: TRL-01 | Complexidade: 5/5 | Pré-requisitos Diretos: 5.13, 9.6, 9.8
+- Modalidades de Prática: [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-39 [Rigor/Prova] (Cap. 5)
+- Subtemas:
+- Sequências de Cauchy em espaços métricos gerais, definição de espaço métrico completo e relação entre subespaços completos e subconjuntos fechados
+- Espaços de Banach (espaços vetoriais normados completos), completude de B(X; E) e de C(X; E) com a métrica do supremo
+- Teorema de extensão de aplicações uniformemente contínuas a valores num espaço completo e construção do Completamento de um espaço métrico qualquer
+- Teorema dos Fechados Encaixados de Cantor (com diâmetros tendendo a zero)
+- Teorema do Ponto Fixo de Banach (Teorema das Contrações) e aplicações (Teorema de Existência e Unicidade de Picard para EDOs em espaços de Banach e funções implícitas)
+- Conjuntos nunca densos, conjuntos magros (de 1ª categoria), conjuntos de 2ª categoria e o Teorema da Categoria de Baire (todo espaço métrico completo é de 2ª categoria em si mesmo, equivalência com interseção enumerável de abertos densos ser densa e aplicações a provas não-construtivas de existência)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Completude de B(X; E) e C(X; E), Teorema dos Fechados Encaixados de Cantor, demonstração do Teorema do Ponto Fixo de Banach (com estimativa de erro a priori) e Teorema da Categoria de Baire.
+- Problema-Marco: Demonstrar o Teorema de Existência e Unicidade de Picard-Lindelöf para EDOs reduzindo-o a uma contração no espaço de Banach C([t₀-δ, t₀+δ]; ℝⁿ) e aplicar Baire para provar a existência genérica de funções contínuas não-deriváveis em C[0,1].
+### Macrotema 9.10: Espaços Métricos Compactos e Espaços Separáveis
+- Trilha: TRL-01 | Complexidade: 5/5 | Pré-requisitos Diretos: 9.8, 9.9
+- Modalidades de Prática: [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-39 [Rigor/Prova] (Caps. 6–7)
+- Subtemas:
+- Definição de espaço métrico compacto por coberturas abertas (propriedade de Borel-Lebesgue) e propriedades imediatas (fechado, limitado, imagem contínua de compacto, homeomorfismo de bijeções contínuas, Teorema de Weierstrass e de Heine-Cantor gerais)
+- Conjuntos totalmente limitados (redes ε finitas), Número de Lebesgue de uma cobertura aberta (Lema de Lebesgue)
+- Teorema Fundamental da Compacidade em Espaços Métricos: equivalência entre Compacidade (Borel-Lebesgue), Compacidade Sequencial (Bolzano-Weierstrass), Propriedade de que todo subconjunto infinito tem ponto de acumulação e Completude + Limitação Total
+- Produtos finitos e enumeráveis de espaços métricos compactos (Teorema de Tychonoff métrico) e caracterização dos compactos em espaços normados de dimensão finita
+- Compacidade nos espaços de funções C(K; M): Equicontinuidade e o Teorema Geral de Arzelà-Ascoli
+- Aproximação de funções contínuas em compactos: Álgebras de funções e o Teorema de Stone-Weierstrass (real e complexo)
+- Espaços métricos separáveis (subconjunto enumerável denso), equivalência com base enumerável de abertos (2º axioma de enumerabilidade) e propriedade de Lindelöf
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Lema do Número de Lebesgue, equivalência Compacidade ⇔ Compacidade Sequencial ⇔ Completo + Totalmente Limitado, Teorema de Arzelà-Ascoli e Teorema de Stone-Weierstrass.
+- Problema-Marco: Demonstrar que a bola unitária fechada de um espaço vetorial normado é compacta se, e somente se, o espaço tem dimensão finita (Lema de Riesz), e aplicar Stone-Weierstrass para aproximação trigonométrica em S¹.
+### Macrotema 9.11: Cálculo Diferencial Rigoroso no ℝⁿ (Análise no ℝⁿ)
+- Trilha: TRL-01 | Complexidade: 5/5 | Pré-requisitos Diretos: 3.9, 5.9, 9.11
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-40 [Rigor/Prova] (Cap. I)
+- Subtemas:
+- Topologia do espaço Euclidiano ℝⁿ e do espaço de Banach L(ℝᵐ; ℝⁿ) das transformações lineares (norma de operadores, abertura do conjunto GL(ℝⁿ) dos isomorfismos lineares e diferenciabilidade da inversão de operadores)
+- Caminhos diferenciáveis em ℝⁿ e a integral de um caminho a valores vetoriais
+- Aplicações diferenciáveis f: U ⊂ ℝᵐ → ℝⁿ: a Derivada de Fréchet f'(a) ∈ L(ℝᵐ; ℝⁿ) como transformação linear tangente
+- Derivadas direcionais, derivadas parciais, Matriz Jacobiana e caracterização das aplicações de classe C¹
+- Regra da Cadeia como composição de operadores lineares
+- A Desigualdade do Valor Médio para aplicações vetoriais (substituto rigoroso do Teorema do Valor Médio quando o contradomínio tem dimensão n > 1) e aplicações (funções com derivada nula em abertos conexos e diferenciabilidade do limite de sequências de funções)
+- Derivadas de ordem superior como formas k-lineares simétricas f^(k)(a) ∈ L_s^k(ℝᵐ; ℝⁿ), demonstração analítica do Teorema de Schwarz, Fórmula de Taylor no ℝⁿ (infinitesimal, integral e de Lagrange) e classificação de pontos críticos de funções reais via formas quadráticas Hessianas
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Diferenciabilidade da aplicação inversão Inv: GL(ℝⁿ) → GL(ℝⁿ) com Inv'(A)·H = -A⁻¹HA⁻¹, Regra da Cadeia (g ∘ f)'(a) = g'(f(a)) ∘ f'(a) e Desigualdade do Valor Médio ||f(b) - f(a)|| ≤ sup ||f'(x)|| ||b - a||.
+- Problema-Marco: Calcular a Derivada de Fréchet da aplicação determinante det: M_n(ℝ) → ℝ (Fórmula de Jacobi: det'(A)·H = tr(adj(A)H)) e provar que toda aplicação diferenciável em aberto conexo com derivada nula é constante.
+### Macrotema 9.12: Teoremas da Função Inversa e Implícita, Imersões, Submersões e Subvariedades de ℝⁿ
+- Trilha: TRL-01 | Complexidade: 5/5 | Pré-requisitos Diretos: 3.10, 9.11
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-40 [Rigor/Prova] (Caps. II–III)
+- Subtemas:
+- Demonstração rigorosa do Teorema da Função Inversa para aplicações de classe C^k em ℝⁿ (usando o Teorema das Contrações de Banach e a continuidade da inversão em GL(ℝⁿ))
+- Formas locais das aplicações diferenciáveis: Imersões (Teorema da Forma Local das Imersões), Submersões (Teorema da Forma Local das Submersões) e o Teorema do Posto (aplicações de posto constante)
+- O Teorema da Função Implícita em sua formulação vetorial geral e difeomorfismos de classe C^k
+- Superfícies diferenciáveis em ℝⁿ (subvariedades suaves de dimensão k e codimensão n - k): caracterizações equivalentes por parametrizações locais, por gráficos locais, por valores regulares de submersões (f⁻¹(c)) e por difeomorfismos locais retificadores
+- Espaço vetorial tangente T_pM a uma subvariedade, aplicações diferenciáveis entre superfícies e extremos condicionados (demonstração geométrica do Método dos Multiplicadores de Lagrange via ortogonalidade ao espaço tangente)
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Demonstração completa do Teorema da Função Inversa via Contração de Banach, dedução do Teorema da Função Implícita, Teorema do Valor Regular (f⁻¹(c) é subvariedade de codimensão m) e caracterização do espaço tangente T_pM = ker df_p.
+- Problema-Marco: Provar que o grupo ortogonal O(n) = {A ∈ M_n(ℝ) : AᵀA = I} é uma subvariedade compacta de M_n(ℝ) de dimensão n(n-1)/2 e determinar seu espaço tangente na identidade T_I O(n) (álgebra de Lie das matrizes antissimétricas).
+### Macrotema 9.13: Integrais Múltiplas Rigorosas, Mudança de Variáveis e o Teorema Geral de Stokes
+- Trilha: TRL-01 | Complexidade: 5/5 | Pré-requisitos Diretos: 3.5, 5.10, 5.11, 9.10, 9.12
+- Modalidades de Prática: [Cálculo/Algébrico], [Demonstração Formal]
+- Bibliografia e Capítulos: BIB-40 [Rigor/Prova] (Caps. IV–VI)
+- Subtemas:
+- Integral de Riemann de funções definidas em blocos compactos n-dimensionais de ℝⁿ: somas de Darboux superiores e inferiores e oscilação
+- Conjuntos de medida nula em ℝⁿ (Lebesgue) e conjuntos J-mensuráveis (conteúdo nulo de Jordan na fronteira)
+- Teorema de Lebesgue no ℝⁿ (caracterização das funções Riemann-integráveis em blocos e em conjuntos J-mensuráveis)
+- Demonstração rigorosa do Teorema de Fubini para integrais múltiplas (redução a integrais iteradas em dimensões menores)
+- Partições da unidade de classe C^∞ subordinadas a coberturas abertas de ℝⁿ
+- Demonstração analítica completa do Teorema de Mudança de Variáveis para integrais múltiplas em abertos de ℝⁿ (usando decomposição local de difeomorfismos em difeomorfismos primitivos, Fubini e partições da unidade)
+- Álgebra multilinear exterior: k-formas lineares alternadas Λ^k(ℝⁿ), produto exterior (∧) e base canônica dx_{i₁} ∧ ... ∧ dx_{i_k}
+- Formas diferenciais de grau k em abertos de ℝⁿ, derivada exterior dω, propriedade fundamental d(dω) = 0 (e Lema de Poincaré em abertos estrelados) e pullback f*ω de formas diferenciais por aplicações diferenciáveis
+- Orientação de superfícies diferenciáveis, superfície com bordo ∂M e orientação induzida no bordo
+- Integração de k-formas diferenciais sobre k-superfícies orientadas (via partições da unidade) e sobre k-cadeias singulares/cubos
+- O Teorema Geral de Stokes para formas diferenciais (∫_M dω = ∫_{∂M} ω) e a dedução dos teoremas clássicos do Cálculo Vetorial (Teorema Fundamental do Cálculo, Green, Stokes em ℝ³ e Divergência de Gauss) como casos particulares
+- Critérios de Aceite (DoD):
+- Conceitos/Teoremas Obrigatórios: Teorema de Lebesgue para integrabilidade em ℝⁿ, Teorema de Fubini, Teorema de Mudança de Variáveis com Jacobiano, propriedades da derivada exterior d(ω ∧ η) e d² = 0, Lema de Poincaré e Teorema Geral de Stokes ∫_M dω = ∫_{∂M} ω.
+- Problema-Marco: Traduzir os campos vetoriais do ℝ³ em 1-formas e 2-formas diferenciais (via isomorfismo musical e estrela de Hodge), provar que d² = 0 corresponde a rot(grad f) = 0 e div(rot F) = 0, e deduzir o Teorema de Green e o Teorema da Divergência de Gauss diretamente de ∫_M dω = ∫_{∂M} ω.
