@@ -8,6 +8,11 @@ const reasons={noEligibleTopic:'Nenhum macrotema ativo está apto ao avanço.',n
 const grade=['Repetir','Difícil','Bom','Fácil'];
 const sDate=at=>fmt(at,{day:'numeric',month:'short',hour:'2-digit',minute:'2-digit'});
 const modeLabel={provider:'Gerado por IA',worked:'Resolução comentada',guided:'Prática guiada'};
+const draftHints={
+  physics:'Use $…$ para equações e blocos cercados python, svg ou mermaid.',
+  'economics-finance':'Use $…$ para fórmulas, tabelas Markdown para fluxos de caixa e blocos python ou mermaid.',
+  engineering:'Use $…$ para equações, tabelas Markdown e blocos cercados python, svg ou mermaid.'
+};
 function group(title,items,make=x=>'<li>'+math(x)+'</li>') {
   return '<div class="area"><h3>'+title+'</h3><ol>'+items.map(make).join('')+'</ol></div>';
 }
@@ -112,9 +117,8 @@ export function challengePage(ctx,challenge) {
     '<form id="attempt-form" class="stack area" data-id="'+esc(id)+'"><label class="field"><span>Formato do rascunho</span><select class="control" name="format">'+
     ['latex','code'].map(fmt=>'<option value="'+fmt+'" '+((draft.format??'latex')===fmt?'selected':'')+'>'+(fmt==='latex'?(technical?'Texto técnico (Markdown e LaTeX)':'LaTeX'):'Código')+'</option>').join('')+
     '</select></label><label class="field"><span>Rascunho</span><textarea class="control editor" name="draft" required spellcheck="false" placeholder="'+
-    (ctx.catalog?.slug==='physics'?'Use $…$ para equações e blocos cercados python, svg ou mermaid.':
-      ctx.catalog?.slug==='economics-finance'?'Use $…$ para fórmulas, tabelas Markdown para fluxos de caixa e blocos python ou mermaid.':
-      technical?'Use blocos cercados com o nome da linguagem ou mermaid.':'Escreva sua solução. Use $…$ para fórmulas no texto.')+'">'+esc(draft.text)+'</textarea></label>'+
+    (draftHints[ctx.catalog?.slug]??(technical?'Use blocos cercados com o nome da linguagem ou mermaid.':
+      'Escreva sua solução. Use $…$ para fórmulas no texto.'))+'">'+esc(draft.text)+'</textarea></label>'+
     '<details class="folder" id="draft-preview"><summary>Pré-visualização</summary><div id="preview-content">'+draftMarkup(draft.text??'',draft.format)+'</div></details>'+
     '<label class="field"><span>Dificuldade encontrada</span><select class="control" name="difficulty" required><option value="">Selecione uma dificuldade</option>'+
     difficulties.map(([id,label])=>'<option value="'+esc(id)+'" '+(draft.difficulty===id?'selected':'')+'>'+esc(technical?id+' · '+label:label)+'</option>').join('')+'</select></label>'+

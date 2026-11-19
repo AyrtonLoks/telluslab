@@ -9,18 +9,19 @@ http://127.0.0.1:4175/#integracao?area=matematica&topic=1.1
 http://127.0.0.1:4175/#integracao?domain=programming&topic=1.1
 http://127.0.0.1:4175/lab?domain=economics-finance&topic=8.3
 http://127.0.0.1:4175/lab?domain=physics&topic=7.3
+http://127.0.0.1:4175/lab?domain=engineering&topic=7.4
 ```
 
 Em outro ambiente, use a origem do TellusLab configurada no TellusPedia e preserve a rota e os parâmetros. O cliente pode montar a consulta com `URLSearchParams`.
 
 | Campo | Regra |
 |---|---|
-| `area` ou `domain` | ID estável registrado. Use `matematica`, `programming`, `economics-finance` ou `physics`. |
+| `area` ou `domain` | ID estável registrado. Use `matematica`, `programming`, `economics-finance`, `physics` ou `engineering`. |
 | `topic` | Opcional. ID exato no catálogo da área. Exemplo `1.1`. |
 
 Parâmetros repetidos e IDs desconhecidos geram erro legível. O contexto é informativo. Abrir um link não altera progresso, tentativa, estado de proficiência ou acesso à solução.
 
-A rota `/lab?domain=physics` abre Física e Óptica. Inclua `topic=7.3` para abrir o macrotema de sistemas ópticos e telescópios. Em hospedagem estática, sirva `index.html` também em `/lab`.
+A rota `/lab?domain=physics` abre Física e Óptica. Inclua `topic=7.3` para abrir o macrotema de sistemas ópticos e telescópios. A rota `/lab?domain=engineering` abre Engenharia e aceita `topic=7.4` para acessar tribologia, colimação e validação em campo. Em hospedagem estática, sirva `index.html` também em `/lab`.
 
 ## Trocar snapshots
 
@@ -39,12 +40,13 @@ O consumidor preserva `snapshot` sem editar. O importador valida versão, tamanh
 import { createAreaRegistry } from './packages/learning-core/index.mjs';
 import { createTellusPediaBridge } from './packages/telluspedia-bridge/index.mjs';
 
-export function integrationFor(mathematics, programming, programmingDag, economics, economicsDag, physics, physicsDag) {
+export function integrationFor(mathematics, programming, programmingDag, economics, economicsDag, physics, physicsDag, engineering, engineeringDag) {
   return createTellusPediaBridge(createAreaRegistry([
     {id: 'matematica', catalog: mathematics},
     {id: 'programming', catalog: programming, dag: programmingDag},
     {id: 'economics-finance', catalog: economics, dag: economicsDag},
-    {id: 'physics', catalog: physics, dag: physicsDag}
+    {id: 'physics', catalog: physics, dag: physicsDag},
+    {id: 'engineering', catalog: engineering, dag: engineeringDag}
   ]));
 }
 

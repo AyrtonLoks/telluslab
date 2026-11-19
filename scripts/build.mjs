@@ -6,6 +6,7 @@ import { mathematicsSeed } from '../packages/curriculum-mathematics/seed.mjs';
 import { programmingSeed } from '../packages/curriculum-programming/seed.mjs';
 import { economicsSeed } from '../domains/economics-finance/seed.mjs';
 import { physicsSeed } from '../domains/physics/seed.mjs';
+import { engineeringSeed } from '../domains/engineering/seed.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const target = resolve(root, 'dist');
@@ -33,7 +34,8 @@ if (fonts.length !== 20) throw new Error('Conjunto de fontes KaTeX incompatível
 for (const font of fonts) await emit('vendor/katex/fonts/' + font, await readFile(resolve(katexDist, 'fonts', font)));
 
 for (const path of ['packages/learning-core', 'packages/curriculum-mathematics',
-  'packages/curriculum-programming', 'packages/telluspedia-bridge', 'domains/economics-finance', 'domains/physics']) {
+  'packages/curriculum-programming', 'packages/telluspedia-bridge',
+  'domains/economics-finance', 'domains/physics', 'domains/engineering']) {
   for (const name of (await readdir(resolve(root, path))).sort()) {
     if (!name.endsWith('.mjs') || ['parse.mjs','seed.mjs'].includes(name)) continue;
     await emit(path + '/' + name, await read(path + '/' + name));
@@ -58,10 +60,12 @@ for (const [path, source] of [
 
 const math = mathematicsSeed();
 const programming = programmingSeed(math);
+const physics = physicsSeed(math, programming);
 await emit('data/catalogo.json', JSON.stringify(math, null, 2) + '\n');
 await emit('data/programming.json', JSON.stringify(programming, null, 2) + '\n');
 await emit('data/economics-finance.json', JSON.stringify(economicsSeed(math, programming), null, 2) + '\n');
-await emit('data/physics.json', JSON.stringify(physicsSeed(math, programming), null, 2) + '\n');
+await emit('data/physics.json', JSON.stringify(physics, null, 2) + '\n');
+await emit('data/engineering.json', JSON.stringify(engineeringSeed(math, physics, programming), null, 2) + '\n');
 const hash = createHash('sha256').update(swSource);
 const included = [...files].sort();
 for (const path of included) {

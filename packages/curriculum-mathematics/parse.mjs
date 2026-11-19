@@ -141,13 +141,18 @@ function parseTopic(block, level, sanitizations, format) {
   const prerequisites = /^Nenhum$/i.test(prerequisiteText) ? [] : prerequisiteText.split(/,\s*/);
   if (prerequisites.some(p => !/^\d+\.\d+$/.test(p))) throw new Error('Pré-requisito inválido: ' + id);
 
-  const modeLine = crossText && modes?.text.match(/^\|---\|---\|[-*] (Modalidades de Prática:.*)$/);
-  if (modeLine) {
-    sanitizations.push({topicId:id, sourceLine:modes.number, original:modes.text, corrected:modeLine[1]});
+  const repair = format.modalityRepairs?.[id];
+  const correctedModes = repair && modes?.text === repair.original ? repair.corrected :
+    crossText && modes?.text.match(/^\|---\|---\|[-*] (Modalidades de Prática:.*)$/)?.[1];
+  if (correctedModes) {
+    sanitizations.push({topicId:id, sourceLine:modes.number, original:modes.text, corrected:correctedModes});
   }
-  const [, modeText] = requireMatch(modeLine ? {...modes, text:modeLine[1]} : modes,
+  const [, modeText] = requireMatch(correctedModes ? {...modes, text:correctedModes} : modes,
     /^Modalidades de Prática:\s*(.+)$/, 'Modalidades de ' + id);
-  const modalities = modeText.split(/,\s*/).map(m => m.replace(/\\/g, '').replace(/^\[|\]$/g, ''));
+  const normalizedModes = modeText.replace(/\\/g, '');
+  const modalities = /^\[[^\[\]]+\](?:,\s*\[[^\[\]]+\])*$/.test(normalizedModes)
+    ? [...normalizedModes.matchAll(/\[([^\]]+)\]/g)].map(([, name]) => name)
+    : normalizedModes.split(/,\s*/).map(name => name.replace(/^\[|\]$/g, ''));
   if (new Set(modalities).size !== modalities.length || modalities.some(m => !format.modalities.includes(m))) {
     throw new Error('Modalidades inválidas: ' + id);
   }

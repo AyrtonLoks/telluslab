@@ -1,5 +1,5 @@
 import {createLearningState,refreshLearning,advancementGuard,pendingPath,applyStudyEvent,planSession,
-  challengeBrief,updateTimer,submitAttempt,createAreaRegistry,createDomainPacks,MATH_DOMAIN,PROG_DOMAIN,ECON_DOMAIN,PHYS_DOMAIN,CROSS_MODES,
+  challengeBrief,updateTimer,submitAttempt,createAreaRegistry,createDomainPacks,MATH_DOMAIN,PROG_DOMAIN,ECON_DOMAIN,PHYS_DOMAIN,ENG_DOMAIN,CROSS_MODES,
   recordSolution,recordFeedback,reviewCard,completeMicroReview,exportSnapshot,importSnapshot} from '../../../packages/learning-core/index.mjs';
 import {openStore,read,change} from './store.mjs';
 import {icon,esc,math,draftMarkup,btn,paintMath,iso,fmt,dayKey,dateFor,moveDay,duration} from './ui.mjs';
@@ -11,6 +11,7 @@ import {MATHEMATICS_AREA,generationMessages,registerChallenge,solutionMessages,s
 import * as programmingProfile from '../../../packages/curriculum-programming/profile.mjs';
 import * as economicsProfile from '../../../domains/economics-finance/profile.mjs';
 import * as physicsProfile from '../../../domains/physics/profile.mjs';
+import * as engineeringProfile from '../../../domains/engineering/profile.mjs';
 import {BRIDGE_FORMAT,MAX_SNAPSHOT_BYTES,createTellusPediaBridge} from '../../../packages/telluspedia-bridge/index.mjs';
 
 const main=document.querySelector('#main');
@@ -28,7 +29,8 @@ const domainOptions = [
     profile:{makeLocalChallenge,localAuthoringMode,localFeedback,generationMessages,registerChallenge,solutionMessages,socraticMessages}},
   {id:PROG_DOMAIN, area:'programming', label:'Programação', file:'programming.json', profile:programmingProfile},
   {id:ECON_DOMAIN, area:'economics-finance', label:'Economia e Finanças', file:'economics-finance.json', profile:economicsProfile},
-  {id:PHYS_DOMAIN, area:'physics', label:'Física e Óptica', file:'physics.json', profile:physicsProfile}
+  {id:PHYS_DOMAIN, area:'physics', label:'Física e Óptica', file:'physics.json', profile:physicsProfile},
+  {id:ENG_DOMAIN, area:'engineering', label:'Engenharia', file:'engineering.json', profile:engineeringProfile}
 ];
 const consolidated = 'consolidado';
 const domainForArea = new Map(domainOptions.map(pack=>[pack.area,pack.id]));

@@ -12,7 +12,8 @@ export const trackShort=['Base','Analítica','Algébrica','Discreta','Estocásti
 const trackLabels={
   programming:['Base','Algoritmos','Design e DDD','Arquitetura','Engenharia'],
   'economics-finance':['Base','Economia','Finanças corporativas','Sistema e risco','Renda fixa'],
-  physics:['Mecânica I','Mecânica II','Ondas e termodinâmica','Eletromagnetismo','Física moderna','Óptica']
+  physics:['Mecânica I','Mecânica II','Ondas e termodinâmica','Eletromagnetismo','Física moderna','Óptica'],
+  engineering:['Fundamentos','Termofluidos e potência','Automotiva','Mecatrônica','Optomecânica']
 };
 export const progressBar=(item,text)=>'<div class="progress-line"><div class="row between"><span>'+esc(text)+'</span><strong>'+percent(item.ratio)+'</strong></div><div class="bar-track" role="progressbar" aria-label="'+esc(text)+'" aria-valuenow="'+Math.round(100*(item.ratio??0))+'"><div style="width:'+Math.round(100*(item.ratio??0))+'%"></div></div></div>';
 const cut=(s,n)=>s.length>n?s.slice(0,n-1)+'…':s;
