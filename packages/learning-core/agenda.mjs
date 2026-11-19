@@ -4,6 +4,8 @@ import { timestamp } from './fsrs.mjs';
 export const DIFFICULTIES = Object.freeze(['Lacuna em Pré-requisito', 'Heurística Inicial',
   'Erro Algébrico', 'Falha de Rigor/Quantificadores', 'Instabilidade/Bug']);
 export const CROSS_PREREQUISITE_GAP = 'DIF-PROG-01';
+export const isCrossPrerequisiteGap = difficulty =>
+  [CROSS_PREREQUISITE_GAP, 'DIF-ECON-01'].includes(difficulty);
 
 export function diagnose(dag, state, attempt) {
   const agenda = {...state.agenda};
@@ -11,7 +13,7 @@ export function diagnose(dag, state, attempt) {
   for (const topicId of attempt.topicIds) {
     const repeated = previous.some(old => old.id !== attempt.id && old.difficulty === attempt.difficulty &&
       old.topicIds.includes(topicId));
-    const crossGap = attempt.difficulty === CROSS_PREREQUISITE_GAP;
+    const crossGap = isCrossPrerequisiteGap(attempt.difficulty);
     if (attempt.difficulty !== DIFFICULTIES[0] && !crossGap && !repeated) continue;
     const cross = crossGap ? dag.cross?.ancestors(topicId) ?? [] : [];
     for (const ancestorId of [...ancestors(dag, [topicId]), ...cross]) {

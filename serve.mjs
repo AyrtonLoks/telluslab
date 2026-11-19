@@ -14,7 +14,7 @@ createServer(async(req,res)=>{
     const url=new URL(req.url,'http://localhost');
     const path=decodeURIComponent(url.pathname);
     if(path.split('/').some(p=>p==='..'||p.includes('\\'))) throw new Error('path');
-    const file=new URL('.'+(path==='/'?'/index.html':path),root);
+    const file=new URL('.'+(['/', '/lab'].includes(path)?'/index.html':path),root);
     if(!file.href.startsWith(root.href)||!(await stat(file)).isFile()) throw new Error('missing');
     res.writeHead(200,{'Content-Type':mime[extname(file.pathname)]??'application/octet-stream','Cache-Control':'no-cache'});
     createReadStream(file).pipe(res);

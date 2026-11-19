@@ -1,7 +1,7 @@
 import { createDag, mastered } from './dag.mjs';
 import { createLearningState } from './fsm.mjs';
 import { FSRS_VERSION, timestamp } from './fsrs.mjs';
-import { CROSS_PREREQUISITE_GAP, DIFFICULTIES } from './agenda.mjs';
+import { DIFFICULTIES, isCrossPrerequisiteGap } from './agenda.mjs';
 
 export const SNAPSHOT_VERSION = 1;
 const record = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -135,7 +135,7 @@ export function importSnapshot(json, catalog, dag = createDag(catalog.topics)) {
     require((local || dag.cross?.ancestors(item.triggerTopicId).includes(item.topicId)) &&
       item.sourceAttemptIds.every(attemptId => {
         const attempt = s.attempts[attemptId];
-        return attempt?.topicIds.includes(item.triggerTopicId) && (local || attempt.difficulty === CROSS_PREREQUISITE_GAP);
+        return attempt?.topicIds.includes(item.triggerTopicId) && (local || isCrossPrerequisiteGap(attempt.difficulty));
       }), 'agenda ' + id);
     timestamp(item.dueAt);
     if (item.completedAt !== null) require(timestamp(item.completedAt) >= timestamp(item.dueAt), 'conclusão de ' + id);

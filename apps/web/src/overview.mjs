@@ -100,7 +100,8 @@ export function consolidatedPage(packs,data,topicHref,now) {
     const cross=packs.dag.byId.get(ref).crossPrerequisites??[];
     return cross.length?[{target,sources:cross.map(parent=>packs.references.get(parent))}]:[];
   });
-  const href=ref=>'<a href="'+esc(topicHref(ref.domainId,ref.topicId))+'">'+esc(ref.topicId+' · '+ref.title)+'</a>';
+  const href=ref=>'<a href="'+esc(topicHref(ref.domainId,ref.topicId))+'">'+
+    esc(packs.domains.get(ref.domainId).label+' · '+ref.topicId+' · '+ref.title)+'</a>';
   return page('Visão Consolidada TellusLab','Acompanhe a proficiência e explore as conexões entre os domínios.')+
     '<section class="card pad"><h2>Progresso geral</h2><p class="small">'+sum(item=>item.validated)+' de '+
       packs.dag.order.length+' macrotemas validados</p><div class="area">'+progressBar({
@@ -114,7 +115,7 @@ export function consolidatedPage(packs,data,topicHref,now) {
     '<section class="card pad area"><h2>Pré-requisitos interdisciplinares</h2><p class="small">'+
       graphEdges.reduce((count,edge)=>count+edge.sources.length,0)+' conexões · '+(data.prerequisiteMode==='strict'?'Modo Estrito':'Modo Flexível')+'</p>'+
       '<ul class="compact-list area">'+graphEdges.map(({target,sources})=>'<li><strong>'+href(target)+'</strong>'+
-      '<p class="small">Pré-requisitos em Matemática · '+sources.map(href).join(', ')+'</p></li>').join('')+'</ul></section>';
+      '<p class="small">'+sources.map(href).join(', ')+'</p></li>').join('')+'</ul></section>';
 }
 
 export function agendaPage(ctx) {

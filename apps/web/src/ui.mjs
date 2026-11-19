@@ -167,6 +167,62 @@ function inline(parent, content) {
   }
 }
 
+function tableCells(line) {
+  return line.trim().replace(/^\||(?<!\\)\|$/g, '').split(/(?<!\\)\|/).map(cell => cell.trim());
+}
+
+function richText(parent, content) {
+  const lines = content.split('\n');
+  let start = 0;
+  for (let i = 0; i + 1 < lines.length; i++) {
+    if (!lines[i].includes('|')) continue;
+    const header = tableCells(lines[i]);
+    const divider = tableCells(lines[i + 1]);
+    if (header.length < 2 || header.length !== divider.length ||
+        !divider.every(cell => /^:?-{3,}:?$/.test(cell))) continue;
+
+    let end = i + 2;
+    const rows = [];
+    while (end < lines.length && lines[end].includes('|')) {
+      const cells = tableCells(lines[end]);
+      if (cells.length !== header.length) break;
+      rows.push(cells);
+      end++;
+    }
+    if (!rows.length) continue;
+
+    inline(parent, lines.slice(start, i).join('\n'));
+    const wrapper = document.createElement('div');
+    wrapper.className = 'table-wrap';
+    wrapper.tabIndex = 0;
+    const table = document.createElement('table');
+    table.className = 'history-table';
+    const alignment = divider.map(cell => cell.endsWith(':') ? (cell.startsWith(':') ? 'center' : 'right') : 'left');
+    const head = table.createTHead().insertRow();
+    for (const [column, title] of header.entries()) {
+      const th = document.createElement('th');
+      th.scope = 'col';
+      th.style.textAlign = alignment[column];
+      inline(th, title);
+      head.append(th);
+    }
+    const body = table.createTBody();
+    for (const cells of rows) {
+      const row = body.insertRow();
+      for (const [column, cell] of cells.entries()) {
+        const element = row.insertCell();
+        element.style.textAlign = alignment[column];
+        inline(element, cell);
+      }
+    }
+    wrapper.append(table);
+    parent.append(wrapper);
+    start = end;
+    i = end - 1;
+  }
+  inline(parent, lines.slice(start).join('\n'));
+}
+
 export function paintMath(root = document) {
   for (const el of root.querySelectorAll('[data-math], [data-code]')) {
     if (el.dataset.rendered === String(Boolean(katex))) continue;
@@ -179,11 +235,11 @@ export function paintMath(root = document) {
     const content = el.dataset.math;
     let last = 0;
     for (const match of content.matchAll(/^ {0,3}(\x60{3,}|~{3,})[ \t]*([a-z0-9_+#.-]*)[ \t]*\r?\n([\s\S]*?)^ {0,3}\1[ \t]*(?:\r?\n|$)/gmi)) {
-      inline(el, content.slice(last, match.index));
+      richText(el, content.slice(last, match.index));
       codeBlock(el, match[3], match[2].toLowerCase());
       last = match.index + match[0].length;
     }
-    inline(el, content.slice(last));
+    richText(el, content.slice(last));
   }
 }
 

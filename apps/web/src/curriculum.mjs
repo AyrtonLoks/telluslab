@@ -9,6 +9,10 @@ export function crossLink(ctx,ref) {
 }
 export const stateTag=p=>badge((p.state)+' · '+labels[+p.state[1]],p.state.toLowerCase());
 export const trackShort=['Base','Analítica','Algébrica','Discreta','Estocástica'];
+const trackLabels={
+  programming:['Base','Algoritmos','Design e DDD','Arquitetura','Engenharia'],
+  'economics-finance':['Base','Economia','Finanças corporativas','Sistema e risco','Renda fixa']
+};
 export const progressBar=(item,text)=>'<div class="progress-line"><div class="row between"><span>'+esc(text)+'</span><strong>'+percent(item.ratio)+'</strong></div><div class="bar-track" role="progressbar" aria-label="'+esc(text)+'" aria-valuenow="'+Math.round(100*(item.ratio??0))+'"><div style="width:'+Math.round(100*(item.ratio??0))+'%"></div></div></div>';
 const cut=(s,n)=>s.length>n?s.slice(0,n-1)+'…':s;
 export const page=(title,desc,actions='')=>'<div class="page-head"><div><h1>'+esc(title)+'</h1>'+(desc?'<p>'+esc(desc)+'</p>':'')+'</div>'+actions+'</div>';
@@ -72,7 +76,7 @@ export function graph(ctx, compact=false) {
     return '<path class="'+(e.cross?'cross-edge':path.has(e.from)&&path.has(e.to)?'path':'')+'" d="'+d+'"/>';
   }).join('');
   const tabs='<div class="seg" aria-label="Trilhas">'+catalog.tracks.map((t,i)=>'<button type="button" data-act="track" data-id="'+t.id+'" aria-pressed="'+(track===t.id)+'" title="'+esc(t.title)+'">'+
-    (catalog.slug==='programming'?['Base','Algoritmos','Design e DDD','Arquitetura','Engenharia'][i]:trackShort[i])+'</button>').join('')+'</div>';
+    (trackLabels[catalog.slug]??trackShort)[i]+'</button>').join('')+'</div>';
   return '<section class="card"><div class="card-head"><div><h2>'+ (compact?'Mapa de aprendizagem':'Grafo curricular')+'</h2><p>'+
     (target&&!compact?'Ordem topológica do objetivo selecionado.':compact?'Pré-requisitos e próximos passos por trilha.':'Selecione um nó para abrir as evidências e os critérios de aceite.')+'</p></div>'+
     (compact?aBtn('trilhas','Abrir mapa','graph'):btn('clear-target','Limpar alvo','','clear',target?'':'hidden'))+'</div>'+
@@ -94,7 +98,7 @@ export function topicPanel(ctx,topic) {
   const guard=advancementGuard(dag,state.progress,topic.id);
   const rows=topic.subtopics.map(sub=>'<li class="row between"><div>'+math(sub.description)+'</div>'+
     (p.subtopics[sub.id]?badge('Concluído','s4'):guard.allowed?btn('study','Registrar','','clear','data-topic="'+topic.id+'" data-kind="completeSubtopic" data-entity="'+sub.id+'"'):'')+'</li>').join('');
-  const dod=topic.criteria.map(c=>'<article class="area"><h4>'+ (c.kind==='mandatory'?(ctx.catalog.slug==='programming'?'Conceitos e princípios obrigatórios':'Conceitos e teoremas obrigatórios'):'Problema-Marco')+'</h4>'+math(c.description)+
+  const dod=topic.criteria.map(c=>'<article class="area"><h4>'+ (c.kind==='mandatory'?(ctx.catalog.difficulties?'Conceitos e princípios obrigatórios':'Conceitos e teoremas obrigatórios'):'Problema-Marco')+'</h4>'+math(c.description)+
     '<div class="meta">'+(p.criteria[c.id]?badge('Validado','s4'):p.state==='S3'&&guard.allowed?btn('study','Validar critério','check','','data-topic="'+topic.id+'" data-kind="validateCriterion" data-entity="'+c.id+'"'):'')+'</div></article>').join('');
   const actionByState={S1:['completeTheory','Registrar fichamento'],S2:['passPractice','Registrar exercícios'],S3:['validateProof','Validar proficiência']};
   const stage=actionByState[p.state];
@@ -149,7 +153,7 @@ export function libraryPage(ctx,bookId) {
       progressBar(metrics.books[book.id],'Progresso da obra')+'</div></section><section class="card pad area"><h2>Macrotemas vinculados</h2><ul class="compact-list">'+topics.map(t=>'<li><div class="row between wrap"><a href="#trilhas/'+t.id+'"><strong>'+t.id+' · '+esc(t.title)+'</strong></a>'+stateTag(ctx.state.progress[t.id])+'</div>'+
       t.bibliography.filter(r=>r.bookId===book.id).map(r=>'<small>'+esc(r.role)+' · '+esc(r.chapters)+'</small>').join(' ')+'</li>').join('')+'</ul></section>';
   }
-  return page('Biblioteca','As 40 obras do currículo, com capítulos vinculados e progresso ponderado pela complexidade.')+
+  return page('Biblioteca','As '+books.length+' obras do currículo, com capítulos vinculados e progresso ponderado pela complexidade.')+
     '<form id="book-filters" class="filters"><label class="field" style="flex:1"><span>Buscar obra</span><input id="book-query" class="control" name="query" value="'+esc(ctx.bookSearch)+'" placeholder="Título, autor ou código"></label>'+
     '<label class="field"><span>Categoria</span><select class="control" name="category"><option value="">Todas as categorias</option>'+categories.map(c=>'<option value="'+c.id+'" '+(ctx.bookCategory===c.id?'selected':'')+'>'+esc(cut(c.title,48))+'</option>').join('')+'</select></label>'+
     '<button class="btn" type="submit">'+icon('search','sm')+' Buscar</button></form><p class="small">'+matching.length+' obras</p>'+

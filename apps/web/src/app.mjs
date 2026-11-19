@@ -1,5 +1,5 @@
 import {createLearningState,refreshLearning,advancementGuard,pendingPath,applyStudyEvent,planSession,
-  challengeBrief,updateTimer,submitAttempt,createAreaRegistry,createDomainPacks,MATH_DOMAIN,PROG_DOMAIN,CROSS_MODES,
+  challengeBrief,updateTimer,submitAttempt,createAreaRegistry,createDomainPacks,MATH_DOMAIN,PROG_DOMAIN,ECON_DOMAIN,CROSS_MODES,
   recordSolution,recordFeedback,reviewCard,completeMicroReview,exportSnapshot,importSnapshot} from '../../../packages/learning-core/index.mjs';
 import {openStore,read,change} from './store.mjs';
 import {icon,esc,math,draftMarkup,btn,paintMath,iso,fmt,dayKey,dateFor,moveDay,duration} from './ui.mjs';
@@ -9,6 +9,7 @@ import {practiceIndex,sessionPage,reviewPage,challengePage} from './practice.mjs
 import {makeLocalChallenge,localAuthoringMode,callProvider,localFeedback} from '../../../packages/curriculum-mathematics/authorship.mjs';
 import {MATHEMATICS_AREA,generationMessages,registerChallenge,solutionMessages,socraticMessages} from '../../../packages/curriculum-mathematics/challenge-profile.mjs';
 import * as programmingProfile from '../../../packages/curriculum-programming/profile.mjs';
+import * as economicsProfile from '../../../domains/economics-finance/profile.mjs';
 import {BRIDGE_FORMAT,MAX_SNAPSHOT_BYTES,createTellusPediaBridge} from '../../../packages/telluspedia-bridge/index.mjs';
 
 const main=document.querySelector('#main');
@@ -24,7 +25,8 @@ const nav=[
 const domainOptions = [
   {id:MATH_DOMAIN, area:MATHEMATICS_AREA, label:'Matemática', file:'catalogo.json',
     profile:{makeLocalChallenge,localAuthoringMode,localFeedback,generationMessages,registerChallenge,solutionMessages,socraticMessages}},
-  {id:PROG_DOMAIN, area:'programming', label:'Programação', file:'programming.json', profile:programmingProfile}
+  {id:PROG_DOMAIN, area:'programming', label:'Programação', file:'programming.json', profile:programmingProfile},
+  {id:ECON_DOMAIN, area:'economics-finance', label:'Economia e Finanças', file:'economics-finance.json', profile:economicsProfile}
 ];
 const consolidated = 'consolidado';
 const domainForArea = new Map(domainOptions.map(pack=>[pack.area,pack.id]));
@@ -40,7 +42,15 @@ const route=()=>{
   if(parts[0]===consolidated) return {domainId:consolidated,parts:[]};
   if(domainForArea.has(parts[0])) return {domainId:domainForArea.get(parts[0]),parts:parts.slice(1)};
   const query=integrationQuery();
-  return {domainId:domainForArea.get(query.get('domain')??query.get('area'))??MATH_DOMAIN,parts};
+  const domainId=domainForArea.get(query.get('domain')??query.get('area'))??MATH_DOMAIN;
+  if(location.pathname==='/lab'&&!parts.length&&query.has('topic')) {
+    try {
+      return {domainId,parts:['trilhas',bridge.parseLaunch(query).topicId]};
+    } catch {
+      return {domainId,parts:['integracao']};
+    }
+  }
+  return {domainId,parts};
 };
 const integrationQuery=()=>new URLSearchParams(location.hash.slice(1).split('?')[1]??location.search);
 const scoped=(data,id,now=iso())=>domainPacks.scope(id,Object.fromEntries(Object.entries(data.domains)
@@ -241,7 +251,7 @@ function settings() {
     btn('import','Importar JSON','upload')+
     '<input type="file" accept=".json,application/json" id="snapshot-file" hidden></div></section><hr>'+
     '<section><h3>Pré-requisitos interdisciplinares</h3><form class="stack" id="prerequisite-form">'+
-    '<label class="field"><span>Regra entre Programação e Matemática</span><select class="control" name="mode">'+
+    '<label class="field"><span>Regra entre domínios</span><select class="control" name="mode">'+
     option('flexible','Modo Flexível (Soft Warning)',saved.prerequisiteMode)+
     option('strict','Modo Estrito (Hard Gate)',saved.prerequisiteMode)+'</select></label>'+
     '<p class="small">O modo flexível sinaliza lacunas. O modo estrito bloqueia o avanço até validar os pré-requisitos cruzados e colocar suas revisões em dia.</p>'+
@@ -369,6 +379,11 @@ function integrationPage() {
   let message;
   try {
     const query=integrationQuery();
+    if (!location.hash.includes('?') && domainForArea.has(location.hash.slice(1).split('/')[0])) {
+      query.delete('domain');
+      query.delete('topic');
+      query.delete('area');
+    }
     if (!query.has('area')&&!query.has('domain')) query.set('area',domainPacks.domains.get(activeDomain).area);
     context=bridge.parseLaunch(query);
   } catch (error) { message=error.message; }

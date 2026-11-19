@@ -4,7 +4,7 @@ import { qualify } from '../learning-core/domain-packs.mjs';
 export const MODALITIES = ['Cálculo/Algébrico', 'Demonstração Formal', 'Implementação Computacional'];
 const ROLES = ['Intuição/Cálculo', 'Rigor/Prova', 'Algorítmica', 'Aplicação/Referência'];
 const listPrefix = /^\s*(?:[-+*]|\d+[.)])\s+/;
-const metadata = /^Trilha: (TRL-(?:PROG-)?0[0-4])\s*\|\s*Complexidade: ([1-5])\/5\s*\|\s*Pré-requisitos Diretos:\s*([^|]+?)(?:\s*\|\s*Pré-requisitos Cruzados \((DOM-[A-Z]+)\):\s*(.+))?$/;
+const metadata = /^Trilha: (TRL-(?:[A-Z]+-)?0[0-4])\s*\|\s*Complexidade: ([1-5])\/5\s*\|\s*Pré-requisitos Diretos:\s*([^|]+?)(?:\s*\|\s*Pré-requisitos Cruzados(?: \((DOM-[A-Z]+)\))?:\s*(.+))?$/;
 const sectionOf = /^([1-9])\.\s+[A-ZÀ-Ú]/u;
 const headingOf = /^\s{0,3}#{1,6}\s+/;
 const rootPrerequisites = '3.9, 5.9, 9.11';
@@ -50,7 +50,7 @@ export function parseSpecification(markdown, {expectedTopicIds, expectedSubtopic
   }
 
   const tracks = sections.get(1).filter(({text}) => text.startsWith('TRL-')).map(line => {
-    const [, id, title, description] = requireMatch(line, /^(TRL-(?:PROG-)?0\d) \((.+?)\):\s*(.+)$/, 'Trilha');
+    const [, id, title, description] = requireMatch(line, /^(TRL-(?:[A-Z]+-)?0\d) \((.+?)\):\s*(.+)$/, 'Trilha');
     return {id, title, description, sourceLine: line.number};
   });
   const requirements = sections.get(1).filter(({text}) => /^RN?F-/.test(text)).map(line => {
@@ -70,7 +70,7 @@ export function parseSpecification(markdown, {expectedTopicIds, expectedSubtopic
       category = {id: label[1], title: label[2]};
       continue;
     }
-    const [, id, title, authorsText] = requireMatch(line, /^(BIB-(?:PROG-)?\d\d):\s*(.+)\s+—\s+(.+)$/, 'Obra');
+    const [, id, title, authorsText] = requireMatch(line, /^(BIB-(?:[A-Z]+-)?\d\d):\s*(.+)\s+—\s+(.+)$/, 'Obra');
     if (!category) throw new Error('Obra sem categoria: ' + id);
     books.push({id, title, authorsText, authors: authorsText.split(/,\s+/), category, sourceLine: line.number});
   }
@@ -96,7 +96,7 @@ export function parseSpecification(markdown, {expectedTopicIds, expectedSubtopic
     else throw new Error('Taxonomia inesperada, linha ' + line.number + ': ' + line.text);
   }
   if (body) topics.push(parseTopic(body, level, sanitizations, format));
-  assertSequence(levels.map(l => l.id), [1, 2, 3, 4, 5, 6, 7, 8, 9], 'Níveis');
+  assertSequence(levels.map(l => l.id), Array.from({length: format.levelCount ?? 9}, (_, i) => i + 1), 'Níveis');
   if (expectedTopicIds) assertSequence(topics.map(t => t.id), expectedTopicIds, 'Macrotemas');
   if (expectedSubtopicCount !== undefined &&
       topics.reduce((n, topic) => n + topic.subtopics.length, 0) !== expectedSubtopicCount) {
@@ -119,10 +119,13 @@ function parseTopic(block, level, sanitizations, format) {
   const [, id, title] = requireMatch(heading, /^Macrotema (\d+\.\d+):\s*(.+)$/, 'Macrotema');
   if (Number(id.split('.')[0]) !== level) throw new Error('Nível incorreto: ' + id);
   const [, trackId, complexity, original, crossDomain, crossText] = requireMatch(meta, metadata, 'Metadados de ' + id);
-  if (crossDomain !== format.crossDomain) throw new Error('Domínio de pré-requisitos cruzados inválido em ' + id);
-  const crossPrerequisites = crossDomain && (/^Nenhum$/i.test(crossText) ? [] : crossText.split(/,\s*/).map(ref => {
+  const allowedCrossDomains = format.crossDomains ?? (format.crossDomain ? [format.crossDomain] : []);
+  if (crossDomain !== format.crossDomain || Boolean(crossText) !== Boolean(allowedCrossDomains.length)) {
+    throw new Error('Domínio de pré-requisitos cruzados inválido em ' + id);
+  }
+  const crossPrerequisites = crossText && (/^Nenhum$/i.test(crossText) ? [] : crossText.split(/,\s*/).map(ref => {
     const [domain, topicId] = ref.split(':');
-    if (domain !== crossDomain || !/^\d+\.\d+$/.test(topicId) || ref !== domain + ':' + topicId) {
+    if (!allowedCrossDomains.includes(domain) || !/^\d+\.\d+$/.test(topicId) || ref !== domain + ':' + topicId) {
       throw new Error('Pré-requisito cruzado inválido em ' + id + ': ' + ref);
     }
     return qualify(domain, topicId);
@@ -138,7 +141,7 @@ function parseTopic(block, level, sanitizations, format) {
   const prerequisites = /^Nenhum$/i.test(prerequisiteText) ? [] : prerequisiteText.split(/,\s*/);
   if (prerequisites.some(p => !/^\d+\.\d+$/.test(p))) throw new Error('Pré-requisito inválido: ' + id);
 
-  const modeLine = format.crossDomain && modes?.text.startsWith('|---|---|* Modalidades de Prática:')
+  const modeLine = crossText && modes?.text.startsWith('|---|---|* Modalidades de Prática:')
     ? {...modes, text:modes.text.slice('|---|---|* '.length)} : modes;
   if (modeLine !== modes) {
     sanitizations.push({topicId:id, sourceLine:modes.number, original:modes.text, corrected:modeLine.text});
@@ -150,7 +153,7 @@ function parseTopic(block, level, sanitizations, format) {
   }
   const [, refText] = requireMatch(refs, /^Bibliografia e Capítulos:\s*(.+)$/, 'Bibliografia de ' + id);
   const bibliography = refText.split(/;\s*(?=BIB-)/).map((ref, index) => {
-    const match = ref.replace(/\\(?=[\[\]])/g, '').match(/^(BIB-(?:PROG-)?\d\d)\s+\[([^\]]+)\]\s+\((.+)\)$/);
+    const match = ref.replace(/\\(?=[\[\]])/g, '').match(/^(BIB-(?:[A-Z]+-)?\d\d)\s+\[([^\]]+)\]\s+\((.+)\)$/);
     if (!match || !format.roles.includes(match[2])) throw new Error('Vínculo bibliográfico inválido em ' + id + ': ' + ref);
     return {id: id + ':bib:' + (index + 1), bookId: match[1], role: match[2], chapters: match[3],
       sourceLine: refs.number};
@@ -170,6 +173,6 @@ function parseTopic(block, level, sanitizations, format) {
   });
   assertSequence(criteria.map(c => c.kind), ['mandatory', 'capstone'], 'DoD de ' + id);
   return {id, level, trackId, title, complexity: Number(complexity), prerequisites,
-    modalities, bibliography, subtopics, criteria, sourceLine: heading.number, ...(crossDomain && {crossPrerequisites})};
+    modalities, bibliography, subtopics, criteria, sourceLine: heading.number, ...(crossText && {crossPrerequisites})};
 }
 
