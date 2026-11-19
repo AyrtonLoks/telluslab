@@ -3,6 +3,7 @@ import { timestamp } from './fsrs.mjs';
 
 export const DIFFICULTIES = Object.freeze(['Lacuna em Pré-requisito', 'Heurística Inicial',
   'Erro Algébrico', 'Falha de Rigor/Quantificadores', 'Instabilidade/Bug']);
+export const CROSS_PREREQUISITE_GAP = 'DIF-PROG-01';
 
 export function diagnose(dag, state, attempt) {
   const agenda = {...state.agenda};
@@ -10,8 +11,10 @@ export function diagnose(dag, state, attempt) {
   for (const topicId of attempt.topicIds) {
     const repeated = previous.some(old => old.id !== attempt.id && old.difficulty === attempt.difficulty &&
       old.topicIds.includes(topicId));
-    if (attempt.difficulty !== DIFFICULTIES[0] && !repeated) continue;
-    for (const ancestorId of ancestors(dag, [topicId])) {
+    const crossGap = attempt.difficulty === CROSS_PREREQUISITE_GAP;
+    if (attempt.difficulty !== DIFFICULTIES[0] && !crossGap && !repeated) continue;
+    const cross = crossGap ? dag.cross?.ancestors(topicId) ?? [] : [];
+    for (const ancestorId of [...ancestors(dag, [topicId]), ...cross]) {
       const id = 'micro:' + topicId + ':' + ancestorId;
       const item = agenda[id];
       agenda[id] = {id, kind: 'micro', topicId: ancestorId, triggerTopicId: topicId,

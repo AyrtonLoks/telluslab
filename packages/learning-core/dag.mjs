@@ -81,7 +81,9 @@ export function pendingPath(catalog, dag, progress, target) {
   const prerequisites = ancestors(dag, pendingTargets).filter(id => !mastered(progress[id]));
   const wanted = new Set([...pendingTargets, ...prerequisites]);
   const order = dag.order.filter(id => wanted.has(id));
-  return {targets, pendingTargets, prerequisites, order, edges: edgesOf(dag, order)};
+  const crossOrder = dag.cross ? [...new Set(pendingTargets.flatMap(id => dag.cross.ancestors(id)))]
+    .filter(dag.cross.isPending) : [];
+  return {targets, pendingTargets, prerequisites, order, edges: edgesOf(dag, order), ...(dag.cross && {crossOrder})};
 }
 
 export function trackView(dag, trackId) {

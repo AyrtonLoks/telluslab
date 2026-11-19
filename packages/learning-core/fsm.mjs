@@ -25,7 +25,10 @@ function guards(dag, progress, id) {
 export function advancementGuard(dag, progress, id) {
   if (!dag.byId.has(id)) throw new Error('Macrotema desconhecido: ' + id);
   const {locked, overdue} = guards(dag, progress, id);
-  return {allowed: active.has(progress[id]?.state) && !locked.length && !overdue.length, locked, overdue};
+  const crossPending = dag.cross?.pending(id) ?? [];
+  const crossBlocked = dag.cross?.mode === 'strict' && crossPending.length > 0;
+  return {allowed: active.has(progress[id]?.state) && !locked.length && !overdue.length && !crossBlocked,
+    locked, overdue, ...(dag.cross && {crossPending, crossBlocked})};
 }
 
 export function refreshLearning(dag, state, now) {
@@ -72,7 +75,7 @@ function cardContent(description, kind, evidence) {
     backLatex: back + '\n\nEvidência registrada — ' + evidence};
 }
 
-function starterCards(topic, proof, completed, now) {
+function starterCards(topic, proof, completed, now, renderCard = cardContent) {
   const obligations = [
     ...topic.subtopics.map(sub => ({...sub, evidence: completed[sub.id].evidence})),
     {id: proof.criterionId, description: topic.criteria.find(c => c.id === proof.criterionId).description,
@@ -83,7 +86,7 @@ function starterCards(topic, proof, completed, now) {
     for (const kind of ['statement', 'counterexample', 'proofIdea']) {
       const id = source.id + ':' + kind;
       cards[id] = {id, topicId: topic.id, sourceId: source.id, kind,
-        ...cardContent(source.description, kind, source.evidence),
+        ...renderCard(source.description, kind, source.evidence),
         scheduler: FSRS_VERSION, createdAt: now, lastReview: null,
         dueAt: new Date(timestamp(now) + DAY_MS).toISOString(),
         stability: null, difficulty: null, repetitions: 0, lapses: 0};
@@ -101,7 +104,7 @@ export function applyStudyEvent(dag, original, topicId, action, now) {
   const current = state.progress[topicId];
   const guard = advancementGuard(dag, state.progress, topicId);
   if (!guard.allowed) throw new Error('Avanço bloqueado em ' + topicId + ': ' +
-    [...guard.locked, ...guard.overdue].join(', '));
+    [...guard.locked, ...guard.overdue, ...(guard.crossBlocked ? guard.crossPending : [])].join(', '));
 
   let next;
   let cards = state.cards;
@@ -143,11 +146,11 @@ export function applyStudyEvent(dag, original, topicId, action, now) {
       const approved = topic.criteria.every(c => current.criteria[c.id]?.approved &&
         (c.kind !== 'mandatory' || current.criteria[c.id].withoutConsultation));
       if (current.state !== 'S3' || !complete || !approved) {
-        throw new Error('S4 exige todos os subtemas, demonstrações sem consulta e Capstone aprovado');
+        throw new Error('S4 exige todos os subtemas, critérios obrigatórios sem consulta e Capstone aprovado');
       }
       next = {...current, state: 'S4', masteredAt: now};
       const proof = topic.criteria.find(c => c.kind === 'mandatory');
-      cards = {...cards, ...starterCards(topic, current.criteria[proof.id], current.subtopics, now)};
+      cards = {...cards, ...starterCards(topic, current.criteria[proof.id], current.subtopics, now, dag.cardContent)};
       break;
     }
     default: throw new Error('Ação de estudo desconhecida: ' + action.kind);

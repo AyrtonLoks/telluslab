@@ -16,10 +16,13 @@ export function createTellusPediaBridge(registry) {
 
   function parseLaunch(search) {
     const params = new URLSearchParams(search);
-    for (const key of ['area','topic']) {
+    for (const key of ['area','domain','topic']) {
       if (params.getAll(key).length > 1) throw new Error('Parâmetro repetido: ' + key);
     }
-    const areaId = params.get('area');
+    if (params.has('area') && params.has('domain') && params.get('area') !== params.get('domain')) {
+      throw new Error('Área e domínio incompatíveis.');
+    }
+    const areaId = params.get('area') ?? params.get('domain');
     const {topicId} = resolve(areaId, params.has('topic') ? params.get('topic') : null);
     return {areaId, topicId};
   }
@@ -33,7 +36,7 @@ export function createTellusPediaBridge(registry) {
     if (new TextEncoder().encode(payload).byteLength > MAX_SNAPSHOT_BYTES) {
       throw new Error('O snapshot excede 10 MiB.');
     }
-    importSnapshot(payload, area.catalog);
+    importSnapshot(payload, area.catalog, area.dag);
     return snapshot;
   }
 

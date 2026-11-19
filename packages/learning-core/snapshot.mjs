@@ -1,7 +1,7 @@
 import { createDag, mastered } from './dag.mjs';
 import { createLearningState } from './fsm.mjs';
 import { FSRS_VERSION, timestamp } from './fsrs.mjs';
-import { DIFFICULTIES } from './agenda.mjs';
+import { CROSS_PREREQUISITE_GAP, DIFFICULTIES } from './agenda.mjs';
 
 export const SNAPSHOT_VERSION = 1;
 const record = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -13,13 +13,12 @@ const keyset = (value, reference) =>
   Object.keys(value).length === Object.keys(reference).length &&
   Object.keys(reference).every(key => Object.hasOwn(value, key));
 
-export function importSnapshot(json, catalog) {
+export function importSnapshot(json, catalog, dag = createDag(catalog.topics)) {
   const x = JSON.parse(json);
   require(x?.schemaVersion === SNAPSHOT_VERSION && x.catalogId === catalog.catalogId &&
-    x.scheduler === FSRS_VERSION && record(x.state), 'versão, catálogo ou agendador');
+    x.domainId === catalog.domainId && x.scheduler === FSRS_VERSION && record(x.state), 'versão, catálogo ou agendador');
   timestamp(x.exportedAt);
   const s = x.state;
-  const dag = createDag(catalog.topics);
   const initial = createLearningState(dag);
   require(keyset(s, initial), 'coleções');
   for (const [key, sample] of Object.entries(initial)) {
@@ -125,13 +124,19 @@ export function importSnapshot(json, catalog) {
     const challenge = s.challenges[a?.challengeId];
     require(a?.id === id && challenge && text(a.draft) && integer(a.elapsedMs) && a.elapsedMs > 0 &&
       Array.isArray(a.topicIds) && a.topicIds.join('|') === challenge.topicIds.join('|') &&
-      ['latex','code'].includes(a.draftFormat) && DIFFICULTIES.includes(a.difficulty) &&
+      ['latex','code'].includes(a.draftFormat) && (catalog.difficulties ? Object.hasOwn(catalog.difficulties, a.difficulty) :
+        DIFFICULTIES.includes(a.difficulty)) &&
       a.elapsedMs <= timestamp(a.submittedAt) - timestamp(a.startedAt), 'tentativa ' + id);
   }
   for (const [id, item] of Object.entries(s.agenda)) {
-    require(item?.id === id && item.kind === 'micro' && dag.byId.has(item.topicId) &&
-      dag.byId.has(item.triggerTopicId) && Array.isArray(item.sourceAttemptIds) && item.sourceAttemptIds.length &&
-      item.sourceAttemptIds.every(attemptId => s.attempts[attemptId]?.topicIds.includes(item.triggerTopicId)), 'agenda ' + id);
+    require(item?.id === id && item.kind === 'micro' && dag.byId.has(item.triggerTopicId) &&
+      Array.isArray(item.sourceAttemptIds) && item.sourceAttemptIds.length, 'agenda ' + id);
+    const local = dag.byId.has(item.topicId);
+    require((local || dag.cross?.ancestors(item.triggerTopicId).includes(item.topicId)) &&
+      item.sourceAttemptIds.every(attemptId => {
+        const attempt = s.attempts[attemptId];
+        return attempt?.topicIds.includes(item.triggerTopicId) && (local || attempt.difficulty === CROSS_PREREQUISITE_GAP);
+      }), 'agenda ' + id);
     timestamp(item.dueAt);
     if (item.completedAt !== null) require(timestamp(item.completedAt) >= timestamp(item.dueAt), 'conclusão de ' + id);
   }
@@ -149,9 +154,9 @@ export function importSnapshot(json, catalog) {
   return s;
 }
 
-export function exportSnapshot(state, catalog, now) {
-  const json = JSON.stringify({schemaVersion: SNAPSHOT_VERSION, catalogId: catalog.catalogId,
+export function exportSnapshot(state, catalog, now, dag) {
+  const json = JSON.stringify({schemaVersion: SNAPSHOT_VERSION, catalogId: catalog.catalogId, domainId:catalog.domainId,
     scheduler: FSRS_VERSION, exportedAt: now, state}, null, 2);
-  importSnapshot(json, catalog);
+  importSnapshot(json, catalog, dag);
   return json;
 }

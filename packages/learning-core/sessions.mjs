@@ -40,7 +40,8 @@ export function planSession(dag, original, {id, now, scheduledAt = now, minutes,
     return {trackId, seconds: allocation,
       cardIds: scheduled.map(c => c.id), topicIds: [...new Set(scheduled.map(c => c.topicId))]};
   });
-  const validated = dag.order.filter(q => ['S4', 'S5'].includes(progress[q].state));
+  const validated = dag.order.filter(q => ['S4', 'S5'].includes(progress[q].state) &&
+    !advancementGuard(dag, progress, q).crossBlocked);
   const mixedCandidates = [...validated].sort((a,b) =>
     Number(byId.get(a).trackId === activeTrack) - Number(byId.get(b).trackId === activeTrack) ||
     (lastAttempted.get(a) ?? '').localeCompare(lastAttempted.get(b) ?? ''));
@@ -83,7 +84,8 @@ export function challengeBrief(dag, original, options) {
   }
   const topics = topicIds.map(t => {
     const topic = dag.byId.get(t);
-    if (!topic || (!advancementGuard(dag, state.progress, t).allowed &&
+    const guard = topic && advancementGuard(dag, state.progress, t);
+    if (!guard || guard.crossBlocked || (!guard.allowed &&
         (!mastered(state.progress[t]) || state.progress[t].state === 'S6'))) throw new Error('Macrotema indisponível: ' + t);
     return topic;
   });

@@ -6,3 +6,4 @@ export * from './sessions.mjs';
 export * from './challenges.mjs';
 export * from './snapshot.mjs';
 export * from './areas.mjs';
+export * from './domain-packs.mjs';

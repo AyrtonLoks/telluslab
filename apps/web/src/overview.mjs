@@ -1,4 +1,4 @@
-import {calendarEvents,weightedProgress,performanceHistory,mastered,advancementGuard} from '../../../packages/learning-core/index.mjs';
+import {calendarEvents,weightedProgress,performanceHistory,mastered,advancementGuard,refreshLearning} from '../../../packages/learning-core/index.mjs';
 import {esc,icon,btn,aBtn,dayKey,dateFor,moveDay,firstWeekDay,fmt,percent,duration,badge} from './ui.mjs';
 import {page,graph,progressBar,titleFor} from './curriculum.mjs';
 
@@ -6,10 +6,14 @@ const days=['Seg','Ter','Qua','Qui','Sex','Sáb','Dom'];
 const cap=s=>s.charAt(0).toUpperCase()+s.slice(1);
 const today=()=>dayKey();
 const midnight=d=>dateFor(d,'00:00').toISOString();
-const within=(ctx,start,end)=>calendarEvents(ctx.state,{start:midnight(start),end:midnight(end)});
+const within=(ctx,start,end)=>{
+  const incoming=Object.fromEntries((ctx.incomingMicro??[]).map(item=>[item.sourceDomain+'::'+item.id,item]));
+  return calendarEvents({...ctx.state,agenda:{...ctx.state.agenda,...incoming}},{start:midnight(start),end:midnight(end)});
+};
 const topicTitle=(ctx,id)=>titleFor(ctx.dag,id);
 const countDue=ctx=>Object.values(ctx.state.cards).filter(c=>c.dueAt<=ctx.now).length;
-const countMicro=ctx=>Object.values(ctx.state.agenda).filter(a=>a.completedAt===null&&a.dueAt<=ctx.now).length;
+const countMicro=ctx=>[...Object.values(ctx.state.agenda),...(ctx.incomingMicro??[])]
+  .filter(a=>a.completedAt===null&&a.dueAt<=ctx.now).length;
 const dateLabel=day=>fmt(dateFor(day),{day:'numeric',month:'short',year:'numeric'});
 const weekKeys=base=>Array.from({length:7},(_,i)=>moveDay(firstWeekDay(base),i));
 
@@ -82,6 +86,35 @@ export function dashboard(ctx) {
     weekStrip(ctx,today(),true)+eventRows(ctx,remaining,2)+'</section>'+
     '<section class="card pad"><div class="row between wrap"><div><h2>Fila de revisão</h2><p class="small">'+due+' cartões · '+micro+' micro-revisões</p></div>'+aBtn('pratica/revisoes','Abrir','repeat','tinted')+'</div></section>'+
     '<section class="card pad"><div class="row between"><h2>Progresso por trilha</h2></div><div class="stack area">'+ctx.catalog.tracks.map(t=>progressBar(summary.tracks[t.id],t.title)).join('')+'</div></section></div></div>';
+}
+
+export function consolidatedPage(packs,data,topicHref,now) {
+  const summary=[...packs.domains.values()].map(pack=>{
+    const state=refreshLearning(pack.dag,data.domains[pack.id].state,now);
+    return {pack,state,weighted:weightedProgress(pack.catalog,state.progress).global,
+      validated:Object.values(state.progress).filter(mastered).length};
+  });
+  const sum=pick=>summary.reduce((total,item)=>total+pick(item),0);
+  const graphEdges=packs.dag.order.flatMap(ref=>{
+    const target=packs.references.get(ref);
+    const cross=packs.dag.byId.get(ref).crossPrerequisites??[];
+    return cross.length?[{target,sources:cross.map(parent=>packs.references.get(parent))}]:[];
+  });
+  const href=ref=>'<a href="'+esc(topicHref(ref.domainId,ref.topicId))+'">'+esc(ref.topicId+' · '+ref.title)+'</a>';
+  return page('Visão Consolidada TellusLab','Acompanhe a proficiência e explore as conexões entre os domínios.')+
+    '<section class="card pad"><h2>Progresso geral</h2><p class="small">'+sum(item=>item.validated)+' de '+
+      packs.dag.order.length+' macrotemas validados</p><div class="area">'+progressBar({
+        ratio:sum(item=>item.weighted.completed)/sum(item=>item.weighted.total)
+      },'Progresso por complexidade')+'</div></section>'+
+    '<div class="grid-two area">'+summary.map(({pack,state,weighted,validated})=>
+      '<section class="card pad"><div class="row between wrap"><h2>'+esc(pack.label)+'</h2>'+aBtn(pack.area+'/inicio','Abrir domínio','right')+
+      '</div><p class="small">'+validated+' de '+pack.catalog.topics.length+' macrotemas validados · '+pack.catalog.books.length+
+      ' obras · '+Object.values(state.cards).filter(card=>card.dueAt<=now).length+' cartões vencidos</p>'+
+      '<div class="area">'+progressBar(weighted,'Progresso por complexidade')+'</div></section>').join('')+'</div>'+
+    '<section class="card pad area"><h2>Pré-requisitos interdisciplinares</h2><p class="small">'+
+      graphEdges.reduce((count,edge)=>count+edge.sources.length,0)+' conexões · '+(data.prerequisiteMode==='strict'?'Modo Estrito':'Modo Flexível')+'</p>'+
+      '<ul class="compact-list area">'+graphEdges.map(({target,sources})=>'<li><strong>'+href(target)+'</strong>'+
+      '<p class="small">Pré-requisitos em Matemática · '+sources.map(href).join(', ')+'</p></li>').join('')+'</ul></section>';
 }
 
 export function agendaPage(ctx) {

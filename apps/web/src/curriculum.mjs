@@ -2,7 +2,11 @@ import {trackView,pendingPath,mastered,advancementGuard,weightedProgress} from '
 import {esc,math,btn,aBtn,icon,badge,percent,normalize} from './ui.mjs';
 
 export const labels=['Bloqueado','Disponível','Teoria concluída','Fixação mecânica','Prova validada','Revisão em dia','Revisão vencida'];
-export const titleFor=(dag,id)=>dag.byId.get(id)?.title ?? id;
+export const titleFor=(dag,id)=>dag.byId.get(id)?.title ?? dag.cross?.reference(id)?.title ?? id;
+export function crossLink(ctx,ref) {
+  const target=ctx.dag.cross.reference(ref);
+  return '<a href="'+esc(ctx.topicHref(target.domainId,target.topicId))+'">'+esc(target.domainId+' '+target.topicId+' · '+target.title)+'</a>';
+}
 export const stateTag=p=>badge((p.state)+' · '+labels[+p.state[1]],p.state.toLowerCase());
 export const trackShort=['Base','Analítica','Algébrica','Discreta','Estocástica'];
 export const progressBar=(item,text)=>'<div class="progress-line"><div class="row between"><span>'+esc(text)+'</span><strong>'+percent(item.ratio)+'</strong></div><div class="bar-track" role="progressbar" aria-label="'+esc(text)+'" aria-valuenow="'+Math.round(100*(item.ratio??0))+'"><div style="width:'+Math.round(100*(item.ratio??0))+'%"></div></div></div>';
@@ -32,6 +36,16 @@ export function graph(ctx, compact=false) {
     nodes=dag.order.filter(id=>ids.has(id)).map(id=>({...dag.byId.get(id),external:dag.byId.get(id).trackId!==track}));
     edges=nodes.flatMap(t=>t.prerequisites.filter(id=>ids.has(id)).map(id=>({from:id,to:t.id})));
   }
+  if(!compact&&dag.cross) {
+    const external=new Map();
+    for(const node of nodes) {
+      for(const ref of node.crossPrerequisites??[]) {
+        external.set(ref,{id:ref,title:titleFor(dag,ref),external:true});
+        edges.push({from:ref,to:node.id,cross:true});
+      }
+    }
+    nodes=[...external.values(),...nodes];
+  }
   const positions=new Map();
   const levels=new Map();
   const counts=new Map();
@@ -55,16 +69,23 @@ export function graph(ctx, compact=false) {
     const x=a.x+141,y=a.y+26,z=b.x,h=b.y+26;
     const d=z>x?'M'+x+' '+y+' C'+((x+z)/2)+' '+y+' '+((x+z)/2)+' '+h+' '+z+' '+h:
       'M'+x+' '+y+' C'+(x+25)+' '+y+' '+(z-20)+' '+h+' '+z+' '+h;
-    return '<path class="'+(path.has(e.from)&&path.has(e.to)?'path':'')+'" d="'+d+'"/>';
+    return '<path class="'+(e.cross?'cross-edge':path.has(e.from)&&path.has(e.to)?'path':'')+'" d="'+d+'"/>';
   }).join('');
-  const tabs='<div class="seg" aria-label="Trilhas">'+catalog.tracks.map((t,i)=>'<button type="button" data-act="track" data-id="'+t.id+'" aria-pressed="'+(track===t.id)+'" title="'+esc(t.title)+'">'+trackShort[i]+'</button>').join('')+'</div>';
+  const tabs='<div class="seg" aria-label="Trilhas">'+catalog.tracks.map((t,i)=>'<button type="button" data-act="track" data-id="'+t.id+'" aria-pressed="'+(track===t.id)+'" title="'+esc(t.title)+'">'+
+    (catalog.slug==='programming'?['Base','Algoritmos','Design e DDD','Arquitetura','Engenharia'][i]:trackShort[i])+'</button>').join('')+'</div>';
   return '<section class="card"><div class="card-head"><div><h2>'+ (compact?'Mapa de aprendizagem':'Grafo curricular')+'</h2><p>'+
     (target&&!compact?'Ordem topológica do objetivo selecionado.':compact?'Pré-requisitos e próximos passos por trilha.':'Selecione um nó para abrir as evidências e os critérios de aceite.')+'</p></div>'+
     (compact?aBtn('trilhas','Abrir mapa','graph'):btn('clear-target','Limpar alvo','','clear',target?'':'hidden'))+'</div>'+
     '<div class="graph-options">'+tabs+'</div><div class="graph-scroll" tabindex="0" aria-label="Grafo rolável"><div class="graph-canvas" style="width:'+width+'px;height:'+height+'px"><svg class="graph-lines" aria-hidden="true" viewBox="0 0 '+width+' '+height+'">'+lines+'</svg>'+
-    nodes.map(n=>{const {x,y}=positions.get(n.id);return tile(n,state.progress[n.id],x,y,path.has(n.id),selected===n.id);}).join('')+
+    nodes.map(n=>{
+      const {x,y}=positions.get(n.id);
+      const progress=state.progress[n.id]??dag.cross?.progress(n.id)??{state:'S0'};
+      const blocked=dag.byId.has(n.id)&&!mastered(progress)&&advancementGuard(dag,state.progress,n.id).crossBlocked;
+      return tile(n,blocked?{state:'S0'}:progress,x,y,path.has(n.id),selected===n.id);
+    }).join('')+
     '</div></div><div class="card-foot legend"><span><i class="dot"></i> Bloqueado</span><span><i class="dot active"></i> Em estudo</span><span><i class="dot done"></i> Validado</span><span><i class="dot due"></i> Revisão vencida</span>'+
-    (!compact?'<span>Contorno tracejado · outra trilha</span>':'')+'</div></section>';
+    (!compact?'<span>Contorno tracejado · referência externa</span>':'')+
+    (edges.some(e=>e.cross)?'<span>Aresta tracejada · pré-requisito interdisciplinar</span>':'')+'</div></section>';
 }
 
 export function topicPanel(ctx,topic) {
@@ -73,18 +94,21 @@ export function topicPanel(ctx,topic) {
   const guard=advancementGuard(dag,state.progress,topic.id);
   const rows=topic.subtopics.map(sub=>'<li class="row between"><div>'+math(sub.description)+'</div>'+
     (p.subtopics[sub.id]?badge('Concluído','s4'):guard.allowed?btn('study','Registrar','','clear','data-topic="'+topic.id+'" data-kind="completeSubtopic" data-entity="'+sub.id+'"'):'')+'</li>').join('');
-  const dod=topic.criteria.map(c=>'<article class="area"><h4>'+ (c.kind==='mandatory'?'Conceitos e teoremas obrigatórios':'Problema-Marco')+'</h4>'+math(c.description)+
+  const dod=topic.criteria.map(c=>'<article class="area"><h4>'+ (c.kind==='mandatory'?(ctx.catalog.slug==='programming'?'Conceitos e princípios obrigatórios':'Conceitos e teoremas obrigatórios'):'Problema-Marco')+'</h4>'+math(c.description)+
     '<div class="meta">'+(p.criteria[c.id]?badge('Validado','s4'):p.state==='S3'&&guard.allowed?btn('study','Validar critério','check','','data-topic="'+topic.id+'" data-kind="validateCriterion" data-entity="'+c.id+'"'):'')+'</div></article>').join('');
   const actionByState={S1:['completeTheory','Registrar fichamento'],S2:['passPractice','Registrar exercícios'],S3:['validateProof','Validar proficiência']};
   const stage=actionByState[p.state];
-  return '<section class="card pad" id="topic-detail"><div class="row between wrap"><div><div class="eyebrow">Macrotema '+topic.id+'</div><h2>'+math(topic.title)+'</h2></div>'+stateTag(p)+'</div>'+
+  const status=guard.crossBlocked&&!mastered(p)?badge('Bloqueado por pré-requisito cruzado','s0'):stateTag(p);
+  return '<section class="card pad" id="topic-detail"><div class="row between wrap"><div><div class="eyebrow">Macrotema '+topic.id+'</div><h2>'+math(topic.title)+'</h2></div>'+status+'</div>'+
     '<div class="meta">'+badge('Complexidade '+topic.complexity+'/5')+topic.modalities.map(m=>badge(m)).join('')+'</div>'+
     '<div class="steps" aria-label="Progressão">'+labels.map((label,i)=>'<span title="'+label+'" class="'+(p.state==='S'+i?'current':'')+'">S'+i+'</span>').join('')+'</div>'+
     (guard.locked.length?'<p class="notice">Pré-requisitos pendentes · '+guard.locked.map(id=>'<a href="#trilhas/'+id+'"><strong>'+id+'</strong></a>').join(', ')+'</p>':'')+
     (guard.overdue.length?'<p class="notice warning">Revise primeiro os pré-requisitos vencidos · '+guard.overdue.join(', ')+'</p>':'')+
+    (guard.crossPending?.length?'<p class="notice warning">'+(guard.crossBlocked?'Avanço bloqueado pelo Modo Estrito.':'Modo Flexível. Revise estes pré-requisitos enquanto avança.')+
+      ' '+guard.crossPending.map(ref=>crossLink(ctx,ref)).join(', ')+'</p>':'')+
     '<div class="row wrap">'+btn('set-target','Definir como alvo','target','','data-kind="topic" data-id="'+topic.id+'"')+
     (guard.allowed&&stage?btn('study',stage[1],'check','primary','data-topic="'+topic.id+'" data-kind="'+stage[0]+'"'):'')+
-    (guard.allowed||['S4','S5'].includes(p.state)?btn('new','Praticar macrotema','practice','tinted','data-topic="'+topic.id+'"'):'')+'</div>'+
+    (!guard.crossBlocked&&(guard.allowed||['S4','S5'].includes(p.state))?btn('new','Praticar macrotema','practice','tinted','data-topic="'+topic.id+'"'):'')+'</div>'+
     '<details class="folder area" open><summary>Subtemas · '+Object.keys(p.subtopics).length+'/'+topic.subtopics.length+'</summary><ul class="compact-list">'+rows+'</ul></details>'+
     '<details class="folder area" open><summary>Critérios de aceite</summary>'+dod+'</details>'+
     '<details class="folder area"><summary>Bibliografia e capítulos</summary><ul class="compact-list">'+topic.bibliography.map(b=>{
@@ -103,6 +127,8 @@ export function mapPage(ctx) {
     '<button class="btn primary" type="submit">'+icon('target','sm')+' Calcular caminho</button></form>'+
     (t?'<div class="card pad area"><div class="row between wrap"><div><h2>Caminho de '+esc(ctx.targetRef?.id)+'</h2><p class="small">'+t.prerequisites.length+' pré-requisitos pendentes · '+t.pendingTargets.length+' macrotemas-alvo pendentes</p></div>'+
     badge(t.order.length?'Ordem de estudo':'Objetivo já coberto','s4')+'</div><div class="row wrap meta">'+t.order.map(id=>'<a class="tag" href="#trilhas/'+id+'" title="'+esc(titleFor(ctx.dag,id))+'">'+id+'</a>').join('')+'</div></div>':'')+
+    (t?.crossOrder?.length?'<section class="card pad area"><h2>Pré-requisitos interdisciplinares pendentes</h2><ol class="compact-list">'+
+      t.crossOrder.map(ref=>'<li>'+crossLink(ctx,ref)+'</li>').join('')+'</ol></section>':'')+
     '<div class="area" style="margin-bottom:16px">'+graph(ctx)+'</div>'+
     (selected?topicPanel(ctx,selected):'');
 }

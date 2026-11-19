@@ -1,34 +1,68 @@
 PRAGMA foreign_keys = ON;
-PRAGMA user_version = 1;
+PRAGMA user_version = 2;
+
+CREATE TABLE domain_pack (
+  id TEXT PRIMARY KEY CHECK (id GLOB 'DOM-[A-Z]*' AND instr(id, ':') = 0),
+  slug TEXT NOT NULL UNIQUE, name TEXT NOT NULL, version TEXT NOT NULL
+) STRICT;
+CREATE TABLE learning_settings (
+  id INTEGER PRIMARY KEY CHECK (id = 1),
+  prerequisite_mode TEXT NOT NULL DEFAULT 'flexible' CHECK (prerequisite_mode IN ('flexible','strict'))
+) STRICT;
 
 CREATE TABLE catalog_revision (
-  id TEXT PRIMARY KEY, document_id TEXT NOT NULL, revision_id TEXT NOT NULL,
+  id TEXT PRIMARY KEY, domain_id TEXT NOT NULL REFERENCES domain_pack(id),
+  document_id TEXT NOT NULL, revision_id TEXT NOT NULL,
   source_url TEXT NOT NULL, source_sha256 TEXT NOT NULL
 ) STRICT;
 CREATE TABLE track (
-  id TEXT PRIMARY KEY, title TEXT NOT NULL, description TEXT NOT NULL, source_line INTEGER NOT NULL
+  id TEXT PRIMARY KEY, domain_id TEXT NOT NULL REFERENCES domain_pack(id),
+  title TEXT NOT NULL, description TEXT NOT NULL, source_line INTEGER NOT NULL,
+  UNIQUE(domain_id,id), CHECK (id GLOB domain_id || '::?*')
 ) STRICT;
 CREATE TABLE requirement (
-  id TEXT PRIMARY KEY, title TEXT NOT NULL, description TEXT NOT NULL, source_line INTEGER NOT NULL
+  id TEXT PRIMARY KEY, domain_id TEXT NOT NULL REFERENCES domain_pack(id),
+  title TEXT NOT NULL, description TEXT NOT NULL, source_line INTEGER NOT NULL,
+  CHECK (id GLOB domain_id || '::?*')
 ) STRICT;
 CREATE TABLE level (
-  id INTEGER PRIMARY KEY CHECK (id BETWEEN 1 AND 9), title TEXT NOT NULL, source_line INTEGER NOT NULL
+  domain_id TEXT NOT NULL REFERENCES domain_pack(id),
+  id INTEGER NOT NULL CHECK (id > 0), title TEXT NOT NULL, source_line INTEGER NOT NULL,
+  PRIMARY KEY(domain_id,id)
 ) STRICT;
-CREATE TABLE book_category (id TEXT PRIMARY KEY, title TEXT NOT NULL) STRICT;
+CREATE TABLE book_category (
+  domain_id TEXT NOT NULL REFERENCES domain_pack(id), id TEXT NOT NULL, title TEXT NOT NULL,
+  PRIMARY KEY(domain_id,id)
+) STRICT;
 CREATE TABLE book (
-  id TEXT PRIMARY KEY, title TEXT NOT NULL, authors_text TEXT NOT NULL,
+  id TEXT PRIMARY KEY, domain_id TEXT NOT NULL REFERENCES domain_pack(id),
+  title TEXT NOT NULL, authors_text TEXT NOT NULL,
   authors_json TEXT NOT NULL CHECK (json_valid(authors_json) AND json_type(authors_json) = 'array'),
-  category_id TEXT NOT NULL REFERENCES book_category(id), source_line INTEGER NOT NULL
+  category_id TEXT NOT NULL, source_line INTEGER NOT NULL,
+  UNIQUE(domain_id,id), CHECK (id GLOB domain_id || '::?*'),
+  FOREIGN KEY(domain_id,category_id) REFERENCES book_category(domain_id,id)
 ) STRICT;
 CREATE TABLE topic (
-  id TEXT PRIMARY KEY, level_id INTEGER NOT NULL REFERENCES level(id),
-  track_id TEXT NOT NULL REFERENCES track(id), title TEXT NOT NULL,
-  complexity INTEGER NOT NULL CHECK (complexity BETWEEN 1 AND 5), source_line INTEGER NOT NULL
+  id TEXT PRIMARY KEY, domain_id TEXT NOT NULL REFERENCES domain_pack(id),
+  level_id INTEGER NOT NULL, track_id TEXT NOT NULL, title TEXT NOT NULL,
+  complexity INTEGER NOT NULL CHECK (complexity BETWEEN 1 AND 5), source_line INTEGER NOT NULL,
+  UNIQUE(domain_id,id), CHECK (id GLOB domain_id || '::?*'),
+  FOREIGN KEY(domain_id,level_id) REFERENCES level(domain_id,id),
+  FOREIGN KEY(domain_id,track_id) REFERENCES track(domain_id,id)
+) STRICT;
+CREATE TABLE modality (
+  domain_id TEXT NOT NULL REFERENCES domain_pack(id), name TEXT NOT NULL,
+  PRIMARY KEY(domain_id,name)
+) STRICT;
+CREATE TABLE difficulty (
+  domain_id TEXT NOT NULL REFERENCES domain_pack(id), id TEXT NOT NULL, label TEXT NOT NULL,
+  PRIMARY KEY(domain_id,id)
 ) STRICT;
 CREATE TABLE topic_modality (
-  topic_id TEXT NOT NULL REFERENCES topic(id),
-  modality TEXT NOT NULL CHECK (modality IN ('Cálculo/Algébrico','Demonstração Formal','Implementação Computacional')),
-  PRIMARY KEY (topic_id, modality)
+  domain_id TEXT NOT NULL, topic_id TEXT NOT NULL, modality TEXT NOT NULL,
+  PRIMARY KEY (topic_id, modality),
+  FOREIGN KEY(domain_id,topic_id) REFERENCES topic(domain_id,id),
+  FOREIGN KEY(domain_id,modality) REFERENCES modality(domain_id,name)
 ) STRICT;
 CREATE TABLE topic_dependency (
   topic_id TEXT NOT NULL REFERENCES topic(id), prerequisite_id TEXT NOT NULL REFERENCES topic(id),
@@ -36,9 +70,11 @@ CREATE TABLE topic_dependency (
 ) STRICT;
 CREATE INDEX topic_dependency_reverse ON topic_dependency(prerequisite_id, topic_id);
 CREATE TABLE topic_bibliography (
-  id TEXT PRIMARY KEY, topic_id TEXT NOT NULL REFERENCES topic(id), book_id TEXT NOT NULL REFERENCES book(id),
-  role TEXT NOT NULL CHECK (role IN ('Intuição/Cálculo','Rigor/Prova','Algorítmica','Aplicação/Referência')),
-  chapters TEXT NOT NULL, source_line INTEGER NOT NULL
+  id TEXT PRIMARY KEY, domain_id TEXT NOT NULL, topic_id TEXT NOT NULL, book_id TEXT NOT NULL,
+  role TEXT NOT NULL, chapters TEXT NOT NULL, source_line INTEGER NOT NULL,
+  CHECK (id GLOB domain_id || '::?*'),
+  FOREIGN KEY(domain_id,topic_id) REFERENCES topic(domain_id,id),
+  FOREIGN KEY(domain_id,book_id) REFERENCES book(domain_id,id)
 ) STRICT;
 CREATE INDEX topic_bibliography_book ON topic_bibliography(book_id, topic_id);
 CREATE TABLE subtopic (
@@ -106,23 +142,28 @@ CREATE TABLE srs_review (
 CREATE INDEX srs_review_time ON srs_review(reviewed_at);
 
 CREATE TABLE study_session (
-  id TEXT PRIMARY KEY, created_at TEXT NOT NULL, scheduled_at TEXT NOT NULL,
+  id TEXT PRIMARY KEY, domain_id TEXT NOT NULL REFERENCES domain_pack(id),
+  created_at TEXT NOT NULL, scheduled_at TEXT NOT NULL,
   duration_seconds INTEGER NOT NULL CHECK (duration_seconds BETWEEN 2700 AND 4500 AND duration_seconds % 60 = 0),
   blocks_json TEXT NOT NULL CHECK (json_valid(blocks_json) AND json_type(blocks_json) = 'array'),
-  gaps_json TEXT NOT NULL CHECK (json_valid(gaps_json) AND json_type(gaps_json) = 'array')
+  gaps_json TEXT NOT NULL CHECK (json_valid(gaps_json) AND json_type(gaps_json) = 'array'),
+  UNIQUE(domain_id,id), CHECK (id GLOB domain_id || '::?*')
 ) STRICT;
 CREATE INDEX study_session_schedule ON study_session(scheduled_at);
 CREATE TABLE challenge (
-  id TEXT PRIMARY KEY, session_id TEXT REFERENCES study_session(id),
+  id TEXT PRIMARY KEY, domain_id TEXT NOT NULL REFERENCES domain_pack(id), session_id TEXT,
   block TEXT NOT NULL CHECK (block IN ('standalone','advance','mixed')),
   created_at TEXT NOT NULL, scheduled_at TEXT NOT NULL, duration_seconds INTEGER NOT NULL CHECK (duration_seconds > 0),
-  modality TEXT NOT NULL CHECK (modality IN ('Cálculo/Algébrico','Demonstração Formal','Implementação Computacional')),
+  modality TEXT NOT NULL,
   title TEXT NOT NULL, statement TEXT NOT NULL,
   requirements_json TEXT NOT NULL CHECK (json_valid(requirements_json) AND json_type(requirements_json) = 'array'),
   hypotheses_json TEXT NOT NULL CHECK (json_valid(hypotheses_json) AND json_type(hypotheses_json) = 'array'),
   examples_json TEXT NOT NULL CHECK (json_valid(examples_json) AND json_type(examples_json) = 'array'),
   tests_json TEXT NOT NULL CHECK (json_valid(tests_json) AND json_type(tests_json) = 'array'),
-  UNIQUE(session_id,block), CHECK ((block = 'standalone') = (session_id IS NULL))
+  UNIQUE(session_id,block), UNIQUE(domain_id,id), CHECK (id GLOB domain_id || '::?*'),
+  CHECK ((block = 'standalone') = (session_id IS NULL)),
+  FOREIGN KEY(domain_id,session_id) REFERENCES study_session(domain_id,id),
+  FOREIGN KEY(domain_id,modality) REFERENCES modality(domain_id,name)
 ) STRICT;
 CREATE INDEX challenge_schedule ON challenge(scheduled_at);
 CREATE TABLE challenge_topic (
@@ -139,12 +180,13 @@ CREATE TABLE challenge_timer (
   running_since TEXT, updated_at TEXT NOT NULL, elapsed_ms INTEGER NOT NULL CHECK (elapsed_ms >= 0)
 ) STRICT;
 CREATE TABLE attempt (
-  id TEXT PRIMARY KEY, challenge_id TEXT NOT NULL REFERENCES challenge(id),
+  id TEXT PRIMARY KEY, domain_id TEXT NOT NULL, challenge_id TEXT NOT NULL,
   started_at TEXT NOT NULL, submitted_at TEXT NOT NULL, elapsed_ms INTEGER NOT NULL CHECK (elapsed_ms > 0),
   draft TEXT NOT NULL CHECK (length(trim(draft)) > 0), draft_format TEXT NOT NULL CHECK (draft_format IN ('latex','code')),
-  difficulty TEXT NOT NULL CHECK (difficulty IN ('Lacuna em Pré-requisito','Heurística Inicial','Erro Algébrico',
-    'Falha de Rigor/Quantificadores','Instabilidade/Bug')),
-  UNIQUE(id, challenge_id)
+  difficulty TEXT NOT NULL,
+  UNIQUE(id, challenge_id), CHECK (id GLOB domain_id || '::?*'),
+  FOREIGN KEY(domain_id,challenge_id) REFERENCES challenge(domain_id,id),
+  FOREIGN KEY(domain_id,difficulty) REFERENCES difficulty(domain_id,id)
 ) STRICT;
 CREATE INDEX attempt_history ON attempt(submitted_at, challenge_id);
 CREATE TABLE challenge_solution (

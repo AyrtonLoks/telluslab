@@ -3,6 +3,7 @@ import { createHash } from 'node:crypto';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { mathematicsSeed } from '../packages/curriculum-mathematics/seed.mjs';
+import { programmingSeed } from '../packages/curriculum-programming/seed.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const target = resolve(root, 'dist');
@@ -29,7 +30,7 @@ const fonts = (await readdir(resolve(katexDist, 'fonts'))).sort().filter(path =>
 if (fonts.length !== 20) throw new Error('Conjunto de fontes KaTeX incompatível');
 for (const font of fonts) await emit('vendor/katex/fonts/' + font, await readFile(resolve(katexDist, 'fonts', font)));
 
-for (const dir of ['learning-core', 'curriculum-mathematics', 'telluspedia-bridge']) {
+for (const dir of ['learning-core', 'curriculum-mathematics', 'curriculum-programming', 'telluspedia-bridge']) {
   const path = 'packages/' + dir;
   for (const name of (await readdir(resolve(root, path))).sort()) {
     if (!name.endsWith('.mjs') || ['parse.mjs','seed.mjs'].includes(name)) continue;
@@ -44,7 +45,17 @@ for (const name of (await readdir(resolve(root, 'apps/web/src'))).sort()) {
     : input;
   await emit(name, text);
 }
-await emit('data/catalogo.json', JSON.stringify(mathematicsSeed(), null, 2) + '\n');
+for (const [path, source] of [
+  ['vendor/mermaid/mermaid.min.js','mermaid/dist/mermaid.min.js'],
+  ['vendor/mermaid/LICENSE.txt','mermaid/LICENSE'],
+  ['vendor/highlight/highlight.min.js','@highlightjs/cdn-assets/highlight.min.js'],
+  ['vendor/highlight/github.min.css','@highlightjs/cdn-assets/styles/github.min.css'],
+  ['vendor/highlight/LICENSE.txt','@highlightjs/cdn-assets/LICENSE']
+]) await emit(path, await read('node_modules/' + source));
+
+const math = mathematicsSeed();
+await emit('data/catalogo.json', JSON.stringify(math, null, 2) + '\n');
+await emit('data/programming.json', JSON.stringify(programmingSeed(math), null, 2) + '\n');
 const hash = createHash('sha256').update(swSource);
 const included = [...files].sort();
 for (const path of included) {

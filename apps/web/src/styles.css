@@ -18,3 +18,14 @@ dialog{color:var(--ink);border:1px solid var(--line);border-radius:18px;width:mi
 @media(max-width:395px){.book-grid{grid-template-columns:1fr}.metric{grid-template-columns:1fr}.graph-options .seg button{font-size:.75rem}.top-actions{gap:4px}}
 @media(prefers-reduced-motion:no-preference){.btn,.node{transition:background .15s,border-color .15s}}
 
+.sidebar { overflow-y:auto }
+.sidebar .brand { margin-bottom:22px }
+.domain-switch { margin:0 0 16px }
+.domain-switch .control { text-overflow:ellipsis }
+.graph-lines path.cross-edge { stroke:#855a35; stroke-dasharray:6 4; stroke-width:2 }
+.math-copy pre code.hljs { background:transparent; padding:0 }
+.technical-diagram { display:block; max-width:100%; height:auto; margin:.65rem auto }
+@media (min-width:671px) and (max-width:850px) {
+  .domain-switch > span { display:none }
+  .domain-switch .control { min-width:0; padding-inline:4px; font-size:.7rem }
+}

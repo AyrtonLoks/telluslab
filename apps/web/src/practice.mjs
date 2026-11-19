@@ -1,6 +1,6 @@
-import {DIFFICULTIES,readSolution,readFeedback} from '../../../packages/learning-core/index.mjs';
-import {badge,btn,aBtn,esc,icon,math,fmt,duration} from './ui.mjs';
-import {page,titleFor} from './curriculum.mjs';
+import {DIFFICULTIES,readSolution,readFeedback,advancementGuard} from '../../../packages/learning-core/index.mjs';
+import {badge,btn,aBtn,esc,icon,math,draftMarkup,fmt,duration} from './ui.mjs';
+import {page,titleFor,crossLink} from './curriculum.mjs';
 
 const blocks={advance:'Avanço',review:'Revisão vencida',mixed:'Problemas mistos'};
 const reasons={noEligibleTopic:'Nenhum macrotema ativo está apto ao avanço.',noDueCards:'Sem cartões vencidos neste momento.',
@@ -51,7 +51,7 @@ export function reviewPage(ctx,sessionId) {
   const cards=all.filter(c=>ctx.reviewEarly||c.dueAt<=ctx.now);
   cards.sort((a,b)=>a.dueAt.localeCompare(b.dueAt)||a.id.localeCompare(b.id));
   const current=cards.find(c=>c.id===ctx.reviewId)??cards[0];
-  const micro=Object.values(ctx.state.agenda).filter(a=>!a.completedAt&&a.dueAt<=ctx.now)
+  const micro=[...Object.values(ctx.state.agenda),...(ctx.incomingMicro??[])].filter(a=>!a.completedAt&&a.dueAt<=ctx.now)
     .sort((a,b)=>a.dueAt.localeCompare(b.dueAt)||a.id.localeCompare(b.id));
   const reveal=current&&ctx.reveal===current.id;
   const kinds={statement:'Enunciado e hipóteses',counterexample:'Contraexemplo',proofIdea:'Ideia da demonstração'};
@@ -64,8 +64,16 @@ export function reviewPage(ctx,sessionId) {
       '<div class="row wrap area">'+btn('reveal','Mostrar resposta','repeat','primary','data-id="'+esc(current.id)+'"')+(cards.length>1?btn('skip-card','Pular','','','data-id="'+esc(cards[(cards.indexOf(current)+1)%cards.length].id)+'"'):'')+'</div>'):
       '<p class="empty">Nenhum cartão disponível nesta fila.</p>')+'</section>'+
     '<section class="card pad"><h2>Micro-revisões de pré-requisitos</h2>'+
-    (micro.length?'<ul class="compact-list">'+micro.map(item=>'<li><div class="row between wrap"><a href="#trilhas/'+item.topicId+'"><strong>'+item.topicId+' · '+esc(titleFor(ctx.dag,item.topicId))+'</strong></a>'+
-      btn('complete-micro','Concluir','check','clear','data-id="'+esc(item.id)+'"')+'</div><p class="small">Dificuldade registrada em '+item.triggerTopicId+'</p></li>').join('')+'</ul>':
+    (micro.length?'<ul class="compact-list">'+micro.map(item=>{
+      const cross=ctx.dag.cross?.reference(item.topicId);
+      const topic=cross?crossLink(ctx,item.topicId):
+        '<a href="#trilhas/'+item.topicId+'"><strong>'+item.topicId+' · '+esc(titleFor(ctx.dag,item.topicId))+'</strong></a>';
+      const source=item.sourceDomain
+        ? '<a href="'+esc(ctx.topicHref(item.sourceDomain,item.triggerTopicId))+'">'+esc(item.sourceDomain+' '+item.triggerTopicId)+'</a>'
+        : esc(item.triggerTopicId);
+      return '<li><div class="row between wrap">'+topic+btn('complete-micro','Concluir','check','clear','data-id="'+esc(item.id)+'"'+
+        (item.sourceDomain?' data-source-domain="'+esc(item.sourceDomain)+'"':''))+'</div><p class="small">Dificuldade registrada em '+source+'</p></li>';
+    }).join('')+'</ul>':
       '<p class="small area">Lacunas e dificuldades recorrentes geram revisões aqui.</p>')+'</section></div>';
 }
 
@@ -81,6 +89,11 @@ export function challengePage(ctx,challenge) {
   const clockButton=timer?.runningSince?['pause','Pausar','pause']:timer?['resume','Retomar','play']:['start','Iniciar','play'];
   const row=cls=>'<span class="clock '+cls+'" data-clock="'+esc(id)+'">00:00:00</span>';
   const focus=challenge.block==='mixed'?'Problema misto':challenge.modality;
+  const technical=Boolean(ctx.catalog?.difficulties);
+  const difficulties=Object.entries(ctx.catalog?.difficulties??Object.fromEntries(DIFFICULTIES.map(label=>[label,label])));
+  const guards=challenge.topicIds.map(topicId=>advancementGuard(ctx.dag,ctx.state.progress,topicId));
+  const blocked=guards.some(guard=>guard.crossBlocked);
+  const pending=[...new Set(guards.flatMap(guard=>guard.crossPending??[]))];
   return page(challenge.title,focus+' · '+duration(challenge.durationSeconds),
     aBtn(challenge.sessionId?'pratica/session/'+esc(challenge.sessionId):'pratica','Voltar à prática','practice'))+
     '<div class="workspace"><div class="stack"><section class="card pad"><div class="row wrap">'+challenge.topicIds.map(x=>'<a class="tag" href="#trilhas/'+x+'">'+x+'</a>').join('')+
@@ -90,18 +103,23 @@ export function challengePage(ctx,challenge) {
     group('Exemplos de ancoragem',challenge.examples,ex=>'<li>'+math(ex.input)+math(ex.expected)+'</li>')+
     group('Testes de sanidade e rigor',challenge.tests,t=>'<li>'+math(t.scenario)+math(t.expected)+'</li>')+'</section></div>'+
     '<div class="stack"><section class="card pad"><div class="row between wrap"><h2>Workspace</h2>'+row('')+'</div>'+
-    '<div class="row wrap area">'+btn('timer',clockButton[1],clockButton[2],'tinted','data-kind="'+clockButton[0]+'" data-id="'+esc(id)+'"')+
+    (pending.length?'<p class="notice warning area">'+
+      (blocked?'Modo Estrito. Resolva os pré-requisitos cruzados para praticar.':'Modo Flexível. Revise estes pré-requisitos enquanto pratica.')+
+      ' '+pending.map(ref=>crossLink(ctx,ref)).join(', ')+'</p>':'')+
+    '<div class="row wrap area">'+btn('timer',clockButton[1],clockButton[2],'tinted','data-kind="'+clockButton[0]+'" data-id="'+esc(id)+'"'+
+      (blocked&&clockButton[0]!=='pause'?' disabled':''))+
       '<span class="small">O tempo exclui as pausas.</span></div>'+
     '<form id="attempt-form" class="stack area" data-id="'+esc(id)+'"><label class="field"><span>Formato do rascunho</span><select class="control" name="format">'+
-    ['latex','code'].map(fmt=>'<option value="'+fmt+'" '+((draft.format??'latex')===fmt?'selected':'')+'>'+(fmt==='latex'?'LaTeX':'Código')+'</option>').join('')+
-    '</select></label><label class="field"><span>Rascunho</span><textarea class="control editor" name="draft" required spellcheck="false" placeholder="Escreva sua solução. Use $…$ para fórmulas no texto.">'+esc(draft.text)+'</textarea></label>'+
-    '<details class="folder" id="draft-preview"><summary>Pré-visualização</summary><div id="preview-content">'+math(draft.text??'')+'</div></details>'+
+    ['latex','code'].map(fmt=>'<option value="'+fmt+'" '+((draft.format??'latex')===fmt?'selected':'')+'>'+(fmt==='latex'?(technical?'Texto técnico (Markdown e LaTeX)':'LaTeX'):'Código')+'</option>').join('')+
+    '</select></label><label class="field"><span>Rascunho</span><textarea class="control editor" name="draft" required spellcheck="false" placeholder="'+
+    (technical?'Use blocos cercados com o nome da linguagem ou mermaid.':'Escreva sua solução. Use $…$ para fórmulas no texto.')+'">'+esc(draft.text)+'</textarea></label>'+
+    '<details class="folder" id="draft-preview"><summary>Pré-visualização</summary><div id="preview-content">'+draftMarkup(draft.text??'',draft.format)+'</div></details>'+
     '<label class="field"><span>Dificuldade encontrada</span><select class="control" name="difficulty" required><option value="">Selecione uma dificuldade</option>'+
-    DIFFICULTIES.map(d=>'<option '+(draft.difficulty===d?'selected':'')+'>'+esc(d)+'</option>').join('')+'</select></label>'+
-    '<button class="btn primary" type="submit">'+icon('check','sm')+' Enviar tentativa</button></form></section>'+
+    difficulties.map(([id,label])=>'<option value="'+esc(id)+'" '+(draft.difficulty===id?'selected':'')+'>'+esc(technical?id+' · '+label:label)+'</option>').join('')+'</select></label>'+
+    '<button class="btn primary" type="submit" '+(blocked?'disabled':'')+'>'+icon('check','sm')+' Enviar tentativa</button></form></section>'+
     '<section class="card pad"><div class="row between wrap"><h2>Solução e revisor</h2>'+badge(current?'Acesso liberado':'Bloqueados',current?'s4':'')+'</div>'+
     (current?'<label class="field area"><span>Tentativa consultada</span><select class="control" id="attempt-pick">'+records.map(a=>'<option value="'+esc(a.id)+'" '+(a.id===current.id?'selected':'')+'>'+sDate(a.submittedAt)+' · '+duration(Math.floor(a.elapsedMs/1000))+'</option>').join('')+'</select></label>'+
-      '<details class="folder area"><summary>Rascunho enviado</summary>'+math(current.draftFormat==='code'?'\u0060\u0060\u0060\n'+current.draft+'\n\u0060\u0060\u0060':current.draft)+'</details>'+
+      '<details class="folder area"><summary>Rascunho enviado</summary>'+draftMarkup(current.draft,current.draftFormat)+'</details>'+
       '<div class="row wrap area">'+btn('solution',sol?'Gerar novamente':metadata.mode==='guided'?'Abrir roteiro comentado':'Abrir solução comentada','book','tinted','data-id="'+esc(id)+'" data-attempt="'+esc(current.id)+'"')+
       btn('feedback',feed?'Revisar novamente':'Revisar tentativa','bulb','','data-id="'+esc(id)+'" data-attempt="'+esc(current.id)+'"')+'</div>'+
       (sol?'<details class="folder area" open><summary>'+ (metadata.mode==='guided'?'Roteiro comentado':'Solução comentada')+'</summary>'+math(sol)+'</details>':'')+

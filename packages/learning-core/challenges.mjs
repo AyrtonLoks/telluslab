@@ -1,6 +1,7 @@
 import { timestamp } from './fsrs.mjs';
 import { DIFFICULTIES, diagnose } from './agenda.mjs';
 import { challengeBrief } from './sessions.mjs';
+import { advancementGuard } from './fsm.mjs';
 
 const hasText = value => typeof value === 'string' && value.trim().length > 0;
 const hasList = value => Array.isArray(value) && value.length > 0 && value.every(hasText);
@@ -52,8 +53,13 @@ export function submitAttempt(dag, state, {id, challengeId, draft, draftFormat, 
   const challenge = state.challenges[challengeId];
   const timer = state.timers[challengeId];
   if (!id || state.attempts[id] || !challenge || !timer || now < timer.updatedAt || !hasText(draft) ||
-      !['latex', 'code'].includes(draftFormat) || !DIFFICULTIES.includes(difficulty)) {
+      !['latex', 'code'].includes(draftFormat) ||
+      !(dag.difficulties ? Object.hasOwn(dag.difficulties, difficulty) : DIFFICULTIES.includes(difficulty))) {
     throw new Error('Tentativa exige cronômetro, rascunho em LaTeX/código e dificuldade');
+  }
+  if (dag.cross && challenge.topicIds.some(topicId =>
+    advancementGuard(dag, state.progress, topicId).crossBlocked)) {
+    throw new Error('Revise os pré-requisitos cruzados antes de enviar a tentativa.');
   }
   const elapsedMs = timer.elapsedMs + (timer.runningSince ? end - timestamp(timer.runningSince) : 0);
   if (!(elapsedMs > 0)) throw new Error('Tempo cronometrado deve ser positivo');

@@ -27,6 +27,80 @@ export const icon = (name, extra = '') => '<svg class="icon '+extra+'" aria-hidd
 export const esc = value => String(value ?? '').replace(/[&<>"']/g, c =>
   ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
 export const math = text => '<div class="math-copy" data-math="'+esc(text)+'"></div>';
+export const draftMarkup = (text, format) => format === 'code'
+  ? '<div class="math-copy" data-code="'+esc(text)+'"></div>' : math(text);
+
+const vendors = new Map();
+function loadVendor(name, path) {
+  if (!vendors.has(name)) vendors.set(name, new Promise((resolve, reject) => {
+    const script = document.createElement('script');
+    script.src = new URL(path, import.meta.url);
+    script.onload = () => resolve(globalThis[name]);
+    script.onerror = () => reject(new Error('Falha ao carregar ' + name));
+    document.head.append(script);
+  }));
+  return vendors.get(name);
+}
+
+let diagramSequence = 0;
+let diagrams;
+function mermaidApi() {
+  diagrams ??= loadVendor('mermaid', './vendor/mermaid/mermaid.min.js').then(api => {
+    api.initialize({startOnLoad:false, securityLevel:'strict', htmlLabels:false, suppressErrorRendering:true});
+    return api;
+  });
+  return diagrams;
+}
+
+async function paintDiagram(pre, source) {
+  try {
+    const api = await mermaidApi();
+    if (!pre.isConnected) return;
+    const {svg} = await api.render('tellus-diagram-' + ++diagramSequence, source);
+    if (!pre.isConnected) return;
+    const image = document.createElement('img');
+    image.className = 'technical-diagram';
+    image.alt = 'Diagrama Mermaid';
+    const url = URL.createObjectURL(new Blob([svg], {type:'image/svg+xml'}));
+    image.src = url;
+    try {
+      await image.decode();
+      pre.before(image);
+      const details = document.createElement('details');
+      const label = document.createElement('summary');
+      label.textContent = 'Código do diagrama';
+      details.append(label);
+      pre.replaceWith(details);
+      details.append(pre);
+    } finally {
+      URL.revokeObjectURL(url);
+    }
+  } catch {
+    if (!pre.isConnected) return;
+    const message = document.createElement('p');
+    message.className = 'notice warning';
+    message.textContent = 'Não foi possível renderizar este diagrama Mermaid.';
+    pre.before(message);
+  }
+}
+
+function codeBlock(parent, source, language) {
+  const pre = document.createElement('pre');
+  const code = document.createElement('code');
+  code.textContent = source;
+  pre.append(code);
+  parent.append(pre);
+  if (language === 'mermaid') {
+    void paintDiagram(pre, source);
+  } else {
+    loadVendor('hljs', './vendor/highlight/highlight.min.js').then(api => {
+      if (!code.isConnected) return;
+      if (language && !api.getLanguage(language)) return;
+      if (language) code.classList.add('language-' + language);
+      api.highlightElement(code);
+    }).catch(() => {});
+  }
+}
 
 const symbols = {
   'ℕ':'\\mathbb{N}', 'ℤ':'\\mathbb{Z}', 'ℚ':'\\mathbb{Q}', 'ℝ':'\\mathbb{R}', 'ℂ':'\\mathbb{C}',
@@ -94,20 +168,22 @@ function inline(parent, content) {
 }
 
 export function paintMath(root = document) {
-  for (const el of root.querySelectorAll('[data-math]')) {
+  for (const el of root.querySelectorAll('[data-math], [data-code]')) {
     if (el.dataset.rendered === String(Boolean(katex))) continue;
     el.dataset.rendered = String(Boolean(katex));
     el.replaceChildren();
-    const chunks = el.dataset.math.split(/^\x60{3}[^\r\n]*\r?\n([\s\S]*?)^\x60{3}[^\r\n]*(?:\r?\n|$)/m);
-    chunks.forEach((chunk,i)=>{
-      if (i%2) {
-        const pre = document.createElement('pre');
-        const code = document.createElement('code');
-        code.textContent=chunk;
-        pre.append(code);
-        el.append(pre);
-      } else inline(el, chunk);
-    });
+    if (el.hasAttribute('data-code')) {
+      codeBlock(el, el.dataset.code, '');
+      continue;
+    }
+    const content = el.dataset.math;
+    let last = 0;
+    for (const match of content.matchAll(/^ {0,3}(\x60{3,}|~{3,})[ \t]*([a-z0-9_+#.-]*)[ \t]*\r?\n([\s\S]*?)^ {0,3}\1[ \t]*(?:\r?\n|$)/gmi)) {
+      inline(el, content.slice(last, match.index));
+      codeBlock(el, match[3], match[2].toLowerCase());
+      last = match.index + match[0].length;
+    }
+    inline(el, content.slice(last));
   }
 }
 
