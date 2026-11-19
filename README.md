@@ -2,16 +2,22 @@
 
 Laboratório local-first de estudo e prática, complementar ao TellusPedia. **Matemática** tem 40 obras e 88 macrotemas. **Programação e Ciência da Computação** tem 41 obras e 49 macrotemas, com 50 conexões para pré-requisitos de Matemática. **Economia e Finanças** tem 19 obras e 32 macrotemas, com 41 conexões para Matemática e duas para Programação.
 
-## Rodar localmente
+## Rodar no Linux ou WSL
 
-Use Node.js 20+ com npm.
+No terminal Linux ou WSL, entre na raiz do repositório. Use Node.js 20 ou superior e npm instalados no próprio ambiente Linux.
 
-```powershell
-npm.cmd ci
-npm.cmd start
+```bash
+npm ci
+npm start
 ```
 
-Abra [http://127.0.0.1:4175/](http://127.0.0.1:4175/). Depois da instalação, também é possível abrir `Abrir-Laboratorio.cmd` no Windows. O servidor usa apenas o loopback. O build monta o site, os três catálogos, KaTeX, destaque de código e Mermaid em `dist/`. O aplicativo pode operar offline após o primeiro carregamento completo.
+`npm ci` instala as dependências do projeto. Nas próximas execuções, use `npm start` para compilar o site em `dist/` e iniciar o servidor. No WSL, abra a URL exibida no terminal no navegador do Windows. Mantenha o terminal aberto e pressione Ctrl+C para encerrar. O aplicativo pode operar offline após o primeiro carregamento completo.
+
+O servidor tenta a porta 4175 e, se ela estiver ocupada, tenta a 4183. Para escolher outra porta no Linux ou WSL, use, por exemplo, `MATH_LAB_PORT=4190 npm start`. O progresso salvo no navegador pertence à URL de cada porta.
+
+### Iniciar pelo Windows
+
+No PowerShell, use `npm.cmd ci` e `npm.cmd start`. O atalho `Abrir-Laboratorio.cmd` também fica disponível após instalar as dependências.
 
 Use o seletor na barra lateral para alternar entre Matemática, Programação, Economia e Finanças e a Visão Consolidada TellusLab. Em **Dados e configurações**, o Modo Flexível (padrão) mostra avisos sobre pré-requisitos cruzados. O Modo Estrito bloqueia o avanço e a prática quando um pré-requisito cruzado está por validar ou tem revisão vencida. As dificuldades `DIF-PROG-01` e `DIF-ECON-01` geram micro-revisões para os ancestrais curriculares locais e de outros domínios. Para abrir Economia e Finanças diretamente, use o caminho `/lab?domain=economics-finance` na porta exibida no terminal.
 
@@ -42,9 +48,9 @@ Cada Domain Pack fornece um identificador estável, um catálogo versionado e um
 
 ## Verificação
 
-```powershell
-npm.cmd test
-npm.cmd run verify:git
+```bash
+npm test
+npm run verify:git
 ```
 
 Execute a auditoria Git após `git add`. Ela verifica os blobs do índice, inclusive itens que foram adicionados à força. O lançador `.cmd` é texto. Saídas de build, dependências, fontes binárias KaTeX, dados locais e configuração de hospedagem são ignorados. A licença MIT existente é preservada.
