@@ -4,7 +4,7 @@ import { qualify } from '../learning-core/domain-packs.mjs';
 export const MODALITIES = ['Cálculo/Algébrico', 'Demonstração Formal', 'Implementação Computacional'];
 const ROLES = ['Intuição/Cálculo', 'Rigor/Prova', 'Algorítmica', 'Aplicação/Referência'];
 const listPrefix = /^\s*(?:[-+*]|\d+[.)])\s+/;
-const metadata = /^Trilha: (TRL-(?:[A-Z]+-)?0[0-4])\s*\|\s*Complexidade: ([1-5])\/5\s*\|\s*Pré-requisitos Diretos:\s*([^|]+?)(?:\s*\|\s*Pré-requisitos Cruzados(?: \((DOM-[A-Z]+)\))?:\s*(.+))?$/;
+const metadata = /^Trilha: (TRL-(?:[A-Z]+-)?0\d)\s*\|\s*Complexidade: ([1-5])\/5\s*\|\s*Pré-requisitos Diretos:\s*([^|]+?)(?:\s*\|\s*Pré-requisitos Cruzados(?: \((DOM-[A-Z]+)\))?:\s*(.+))?$/;
 const sectionOf = /^([1-9])\.\s+[A-ZÀ-Ú]/u;
 const headingOf = /^\s{0,3}#{1,6}\s+/;
 const rootPrerequisites = '3.9, 5.9, 9.11';
@@ -57,7 +57,7 @@ export function parseSpecification(markdown, {expectedTopicIds, expectedSubtopic
     const [, id, title, description] = requireMatch(line, /^(RN?F-\d\d) \((.+?)\):\s*(.+)$/, 'Requisito');
     return {id, title, description, sourceLine: line.number};
   });
-  assertSequence(tracks.map(t => t.id), Array.from({length: 5}, (_, i) => format.trackPrefix + '0' + i), 'Trilhas');
+  assertSequence(tracks.map(t => t.id), Array.from({length: format.trackCount ?? 5}, (_, i) => format.trackPrefix + '0' + i), 'Trilhas');
   assertSequence(requirements.map(r => r.id), [
     ...Array.from({length: 7}, (_, i) => 'RF-0' + (i + 1)), 'RNF-01', 'RNF-02', 'RNF-03'
   ], 'Requisitos');
@@ -141,12 +141,12 @@ function parseTopic(block, level, sanitizations, format) {
   const prerequisites = /^Nenhum$/i.test(prerequisiteText) ? [] : prerequisiteText.split(/,\s*/);
   if (prerequisites.some(p => !/^\d+\.\d+$/.test(p))) throw new Error('Pré-requisito inválido: ' + id);
 
-  const modeLine = crossText && modes?.text.startsWith('|---|---|* Modalidades de Prática:')
-    ? {...modes, text:modes.text.slice('|---|---|* '.length)} : modes;
-  if (modeLine !== modes) {
-    sanitizations.push({topicId:id, sourceLine:modes.number, original:modes.text, corrected:modeLine.text});
+  const modeLine = crossText && modes?.text.match(/^\|---\|---\|[-*] (Modalidades de Prática:.*)$/);
+  if (modeLine) {
+    sanitizations.push({topicId:id, sourceLine:modes.number, original:modes.text, corrected:modeLine[1]});
   }
-  const [, modeText] = requireMatch(modeLine, /^Modalidades de Prática:\s*(.+)$/, 'Modalidades de ' + id);
+  const [, modeText] = requireMatch(modeLine ? {...modes, text:modeLine[1]} : modes,
+    /^Modalidades de Prática:\s*(.+)$/, 'Modalidades de ' + id);
   const modalities = modeText.split(/,\s*/).map(m => m.replace(/\\/g, '').replace(/^\[|\]$/g, ''));
   if (new Set(modalities).size !== modalities.length || modalities.some(m => !format.modalities.includes(m))) {
     throw new Error('Modalidades inválidas: ' + id);

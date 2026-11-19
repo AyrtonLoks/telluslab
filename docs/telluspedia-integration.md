@@ -8,18 +8,19 @@ TellusLab permanece em seu próprio repositório. O TellusPedia referencia o lab
 http://127.0.0.1:4175/#integracao?area=matematica&topic=1.1
 http://127.0.0.1:4175/#integracao?domain=programming&topic=1.1
 http://127.0.0.1:4175/lab?domain=economics-finance&topic=8.3
+http://127.0.0.1:4175/lab?domain=physics&topic=7.3
 ```
 
 Em outro ambiente, use a origem do TellusLab configurada no TellusPedia e preserve a rota e os parâmetros. O cliente pode montar a consulta com `URLSearchParams`.
 
 | Campo | Regra |
 |---|---|
-| `area` ou `domain` | ID estável registrado. Use `matematica`, `programming` ou `economics-finance`. |
+| `area` ou `domain` | ID estável registrado. Use `matematica`, `programming`, `economics-finance` ou `physics`. |
 | `topic` | Opcional. ID exato no catálogo da área. Exemplo `1.1`. |
 
 Parâmetros repetidos e IDs desconhecidos geram erro legível. O contexto é informativo. Abrir um link não altera progresso, tentativa, estado de proficiência ou acesso à solução.
 
-A rota `/lab?domain=economics-finance` abre o domínio. Inclua `topic=8.3` para abrir o macrotema de securitização. Em hospedagem estática, sirva `index.html` também em `/lab`.
+A rota `/lab?domain=physics` abre Física e Óptica. Inclua `topic=7.3` para abrir o macrotema de sistemas ópticos e telescópios. Em hospedagem estática, sirva `index.html` também em `/lab`.
 
 ## Trocar snapshots
 
@@ -30,7 +31,7 @@ Há duas operações explícitas na página **TellusPedia**. **Exportar para Tel
 | `format` | `telluslab.snapshot` |
 | `version` | `1` |
 | `areaId` | ID registrado da área |
-| `snapshot` | JSON integral exportado pelo TellusLab, incluindo `schemaVersion`, `catalogId`, `scheduler`, `exportedAt`, `state`, `domainId` para Programação e Economia e Finanças e, quando presente, `workspace` |
+| `snapshot` | JSON integral exportado pelo TellusLab, incluindo `schemaVersion`, `catalogId`, `scheduler`, `exportedAt`, `state`, `domainId` nos Domain Packs que o declaram e, quando presente, `workspace` |
 
 O consumidor preserva `snapshot` sem editar. O importador valida versão, tamanho (até 10 MiB), área, catálogo e invariantes de domínio. Versões desconhecidas ou catálogos incompatíveis exigem uma conversão explícita. A substituição é feita na transação IndexedDB após confirmação. Snapshots não devem ser enviados como query string nem versionados no Git.
 
@@ -38,11 +39,12 @@ O consumidor preserva `snapshot` sem editar. O importador valida versão, tamanh
 import { createAreaRegistry } from './packages/learning-core/index.mjs';
 import { createTellusPediaBridge } from './packages/telluspedia-bridge/index.mjs';
 
-export function integrationFor(mathematics, programming, programmingDag, economics, economicsDag) {
+export function integrationFor(mathematics, programming, programmingDag, economics, economicsDag, physics, physicsDag) {
   return createTellusPediaBridge(createAreaRegistry([
     {id: 'matematica', catalog: mathematics},
     {id: 'programming', catalog: programming, dag: programmingDag},
-    {id: 'economics-finance', catalog: economics, dag: economicsDag}
+    {id: 'economics-finance', catalog: economics, dag: economicsDag},
+    {id: 'physics', catalog: physics, dag: physicsDag}
   ]));
 }
 

@@ -1,6 +1,6 @@
 # TellusLab
 
-Laboratório local-first de estudo e prática, complementar ao TellusPedia. **Matemática** tem 40 obras e 88 macrotemas. **Programação e Ciência da Computação** tem 41 obras e 49 macrotemas, com 50 conexões para pré-requisitos de Matemática. **Economia e Finanças** tem 19 obras e 32 macrotemas, com 41 conexões para Matemática e duas para Programação.
+Laboratório local-first de estudo e prática, complementar ao TellusPedia. **Matemática** tem 40 obras e 88 macrotemas. **Programação e Ciência da Computação** tem 41 obras e 49 macrotemas, com 50 conexões para pré-requisitos de Matemática. **Economia e Finanças** tem 19 obras e 32 macrotemas, com 41 conexões para Matemática e duas para Programação. **Física e Óptica** tem 7 obras e 37 macrotemas, com 75 conexões para Matemática e quatro para Programação.
 
 ## Rodar no Linux ou WSL
 
@@ -19,7 +19,7 @@ O servidor tenta a porta 4175 e, se ela estiver ocupada, tenta a 4183. Para esco
 
 No PowerShell, use `npm.cmd ci` e `npm.cmd start`. O atalho `Abrir-Laboratorio.cmd` também fica disponível após instalar as dependências.
 
-Use o seletor na barra lateral para alternar entre Matemática, Programação, Economia e Finanças e a Visão Consolidada TellusLab. Em **Dados e configurações**, o Modo Flexível (padrão) mostra avisos sobre pré-requisitos cruzados. O Modo Estrito bloqueia o avanço e a prática quando um pré-requisito cruzado está por validar ou tem revisão vencida. As dificuldades `DIF-PROG-01` e `DIF-ECON-01` geram micro-revisões para os ancestrais curriculares locais e de outros domínios. Para abrir Economia e Finanças diretamente, use o caminho `/lab?domain=economics-finance` na porta exibida no terminal.
+Use o seletor na barra lateral para alternar entre os quatro domínios e a Visão Consolidada TellusLab. Em **Dados e configurações**, o Modo Flexível (padrão) mostra avisos sobre pré-requisitos cruzados. O Modo Estrito bloqueia o avanço e a prática quando um pré-requisito cruzado está por validar ou tem revisão vencida. As dificuldades `DIF-PROG-01`, `DIF-ECON-01`, `DIF-PHYS-01` e `DIF-PHYS-04` geram micro-revisões para os ancestrais curriculares locais e de outros domínios. Para abrir Física e Óptica diretamente, use `/lab?domain=physics` na porta exibida no terminal.
 
 Para migrar progresso, use **Snapshot → Exportar JSON** no aplicativo antigo e **Snapshot → Importar JSON** no novo. A importação restaura o domínio identificado no arquivo. Se mantiver exatamente a origem `http://127.0.0.1:4175`, o mesmo navegador e o mesmo perfil, a base IndexedDB existente é migrada automaticamente. Encerre o servidor antigo antes de iniciar o novo na mesma porta. A porta pode ser configurada em `MATH_LAB_PORT`. Origens diferentes têm armazenamento separado.
 
@@ -39,6 +39,7 @@ Para migrar progresso, use **Snapshot → Exportar JSON** no aplicativo antigo e
 | `packages/curriculum-mathematics/` | Especificação, parser, seed, modalidades, prompts e autoria local de Matemática |
 | `packages/curriculum-programming/` | Especificação versionada, seed, modalidades e autoria local de Programação |
 | `domains/economics-finance/` | Especificação, seed, modalidades e autoria local de Economia e Finanças |
+| `domains/physics/` | Especificação, seed, modalidades e autoria local de Física e Óptica |
 | `packages/telluspedia-bridge/` | Contexto de navegação e envelopes JSON versionados |
 | `scripts/` | Build e auditoria dos arquivos efetivamente staged no Git |
 | `test/` | Regressões de domínio, integração, renderização KaTeX e compatibilidade |

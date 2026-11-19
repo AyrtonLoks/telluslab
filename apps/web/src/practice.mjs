@@ -112,7 +112,8 @@ export function challengePage(ctx,challenge) {
     '<form id="attempt-form" class="stack area" data-id="'+esc(id)+'"><label class="field"><span>Formato do rascunho</span><select class="control" name="format">'+
     ['latex','code'].map(fmt=>'<option value="'+fmt+'" '+((draft.format??'latex')===fmt?'selected':'')+'>'+(fmt==='latex'?(technical?'Texto técnico (Markdown e LaTeX)':'LaTeX'):'Código')+'</option>').join('')+
     '</select></label><label class="field"><span>Rascunho</span><textarea class="control editor" name="draft" required spellcheck="false" placeholder="'+
-    (ctx.catalog?.slug==='economics-finance'?'Use $…$ para fórmulas, tabelas Markdown para fluxos de caixa e blocos python ou mermaid.':
+    (ctx.catalog?.slug==='physics'?'Use $…$ para equações e blocos cercados python, svg ou mermaid.':
+      ctx.catalog?.slug==='economics-finance'?'Use $…$ para fórmulas, tabelas Markdown para fluxos de caixa e blocos python ou mermaid.':
       technical?'Use blocos cercados com o nome da linguagem ou mermaid.':'Escreva sua solução. Use $…$ para fórmulas no texto.')+'">'+esc(draft.text)+'</textarea></label>'+
     '<details class="folder" id="draft-preview"><summary>Pré-visualização</summary><div id="preview-content">'+draftMarkup(draft.text??'',draft.format)+'</div></details>'+
     '<label class="field"><span>Dificuldade encontrada</span><select class="control" name="difficulty" required><option value="">Selecione uma dificuldade</option>'+

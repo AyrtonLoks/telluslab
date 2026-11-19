@@ -52,19 +52,25 @@ function mermaidApi() {
   return diagrams;
 }
 
-async function paintDiagram(pre, source) {
+async function paintDiagram(pre, source, language) {
+  const format = language === 'svg' ? 'SVG' : 'Mermaid';
   try {
-    const api = await mermaidApi();
-    if (!pre.isConnected) return;
-    const {svg} = await api.render('tellus-diagram-' + ++diagramSequence, source);
+    let svg = source;
+    if (language === 'mermaid') {
+      const api = await mermaidApi();
+      if (!pre.isConnected) return;
+      ({svg} = await api.render('tellus-diagram-' + ++diagramSequence, source));
+    }
     if (!pre.isConnected) return;
     const image = document.createElement('img');
     image.className = 'technical-diagram';
-    image.alt = 'Diagrama Mermaid';
+    image.alt = 'Diagrama ' + format;
+    // Render SVG as an image so document markup stays outside the page DOM.
     const url = URL.createObjectURL(new Blob([svg], {type:'image/svg+xml'}));
     image.src = url;
     try {
       await image.decode();
+      if (!pre.isConnected) return;
       pre.before(image);
       const details = document.createElement('details');
       const label = document.createElement('summary');
@@ -79,7 +85,7 @@ async function paintDiagram(pre, source) {
     if (!pre.isConnected) return;
     const message = document.createElement('p');
     message.className = 'notice warning';
-    message.textContent = 'Não foi possível renderizar este diagrama Mermaid.';
+    message.textContent = 'Não foi possível renderizar este diagrama ' + format + '.';
     pre.before(message);
   }
 }
@@ -90,8 +96,8 @@ function codeBlock(parent, source, language) {
   code.textContent = source;
   pre.append(code);
   parent.append(pre);
-  if (language === 'mermaid') {
-    void paintDiagram(pre, source);
+  if (language === 'mermaid' || language === 'svg') {
+    void paintDiagram(pre, source, language);
   } else {
     loadVendor('hljs', './vendor/highlight/highlight.min.js').then(api => {
       if (!code.isConnected) return;

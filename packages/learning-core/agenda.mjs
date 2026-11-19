@@ -5,7 +5,7 @@ export const DIFFICULTIES = Object.freeze(['Lacuna em Pré-requisito', 'Heuríst
   'Erro Algébrico', 'Falha de Rigor/Quantificadores', 'Instabilidade/Bug']);
 export const CROSS_PREREQUISITE_GAP = 'DIF-PROG-01';
 export const isCrossPrerequisiteGap = difficulty =>
-  [CROSS_PREREQUISITE_GAP, 'DIF-ECON-01'].includes(difficulty);
+  [CROSS_PREREQUISITE_GAP, 'DIF-ECON-01', 'DIF-PHYS-01', 'DIF-PHYS-04'].includes(difficulty);
 
 export function diagnose(dag, state, attempt) {
   const agenda = {...state.agenda};
