@@ -12,16 +12,20 @@ import { languageSeed } from '../domains/languages/seed.mjs';
 import { literatureSeed } from '../domains/literature/seed.mjs';
 import { MATH_DOMAIN } from '../packages/learning-core/domain-packs.mjs';
 
+import { bridgeCatalog } from './bridge-catalog.mjs';
+
 const root = fileURLToPath(new URL('../', import.meta.url));
 const target = resolve(root, 'dist');
 const files = new Set();
-async function emit(path, contents) {
+async function emit(path, contents, cache = true) {
   const file = resolve(target, path);
   await mkdir(dirname(file), {recursive: true});
   await writeFile(file, contents);
-  files.add(path);
+  if (cache) files.add(path);
 }
 const read = path => readFile(resolve(root, path));
+const pediaUrl = new URL(process.env.VITE_TELLUSPEDIA_URL ?? 'http://127.0.0.1:3000').origin;
+if (!/^https?:/u.test(pediaUrl)) throw new Error('VITE_TELLUSPEDIA_URL deve ser HTTP ou HTTPS.');
 const swSource = await read('apps/web/src/sw.js');
 const katOverride = process.env.TELLUSLAB_KATEX_DIST;
 const katexDist = katOverride ? resolve(katOverride) : resolve(root, 'node_modules/katex/dist');
@@ -60,6 +64,7 @@ for (const name of (await readdir(resolve(root, 'apps/web/src'))).sort()) {
   const input = await read('apps/web/src/' + name);
   const text = name.endsWith('.mjs')
     ? input.toString('utf8').replaceAll('../../../packages/', './packages/').replaceAll('../../../domains/', './domains/')
+      .replace("'__TELLUSPEDIA_URL__'", JSON.stringify(pediaUrl))
       .replace("import katex from 'katex';", "import katex from './vendor/katex/katex.mjs';")
     : input;
   await emit(name, text);
@@ -82,14 +87,19 @@ const dependencies = [math, programming, economics, physics, engineering, humani
   .map(catalog => ({id:catalog.domainId ?? MATH_DOMAIN, catalog}));
 const languages = languageSeed(dependencies);
 const literature = literatureSeed([...dependencies, {id:languages.domainId, catalog:languages}]);
-await emit('data/catalogo.json', JSON.stringify(math, null, 2) + '\n');
-await emit('data/programming.json', JSON.stringify(programming, null, 2) + '\n');
-await emit('data/economics-finance.json', JSON.stringify(economics, null, 2) + '\n');
-await emit('data/physics.json', JSON.stringify(physics, null, 2) + '\n');
-await emit('data/engineering.json', JSON.stringify(engineering, null, 2) + '\n');
-await emit('data/humanities.json', JSON.stringify(humanities, null, 2) + '\n');
-await emit('data/languages.json', JSON.stringify(languages, null, 2) + '\n');
-await emit('data/literature.json', JSON.stringify(literature, null, 2) + '\n');
+const catalogs = [math, programming, economics, physics, engineering, humanities, languages, literature];
+const {registry, manifest} = bridgeCatalog(catalogs);
+for (const [index,domain] of registry.domains.entries()) {
+  const contents = JSON.stringify(catalogs[index], null, 2) + '\n';
+  await emit('domains/' + domain.slug + '/catalog.json', contents);
+  const legacy = domain.slug === 'mathematics' ? 'catalogo' : domain.slug;
+  await emit('data/' + legacy + '.json', contents, false);
+}
+await emit('bridge/registry.json', JSON.stringify(registry, null, 2) + '\n');
+await emit('bridge/manifest.json', JSON.stringify(manifest, null, 2) + '\n');
+for (const name of ['index.mjs', 'registry.schema.json', 'snapshot.schema.json', 'manifest.schema.json']) {
+  await emit('packages/tellus-bridge/' + name, await read('packages/tellus-bridge/' + name));
+}
 const hash = createHash('sha256').update(swSource);
 const included = [...files].sort();
 for (const path of included) {

@@ -1,4 +1,4 @@
-import {DIFFICULTIES,readSolution,readFeedback,advancementGuard} from '../../../packages/learning-core/index.mjs';
+import {canonicalDiagnosis,MATH_DIFFICULTIES,readSolution,readFeedback,advancementGuard} from '../../../packages/learning-core/index.mjs';
 import {badge,btn,aBtn,esc,icon,math,draftMarkup,fmt,duration} from './ui.mjs';
 import {page,titleFor,crossLink} from './curriculum.mjs';
 
@@ -102,7 +102,8 @@ export function challengePage(ctx,challenge) {
   const focus=challenge.block==='mixed'?'Problema misto':challenge.modality;
   const technical=Boolean(ctx.catalog?.difficulties);
   const textFormat=['humanities','languages','literature'].includes(ctx.catalog?.slug)?'Texto (Markdown)':technical?'Texto técnico (Markdown e LaTeX)':'LaTeX';
-  const difficulties=Object.entries(ctx.catalog?.difficulties??Object.fromEntries(DIFFICULTIES.map(label=>[label,label])));
+  const draftDifficulty=canonicalDiagnosis(draft.difficulty);
+  const difficulties=Object.entries(ctx.catalog?.difficulties??MATH_DIFFICULTIES);
   const guards=challenge.topicIds.map(topicId=>advancementGuard(ctx.dag,ctx.state.progress,topicId));
   const blocked=guards.some(guard=>guard.crossBlocked);
   const pending=[...new Set(guards.flatMap(guard=>guard.crossPending??[]))];
@@ -128,7 +129,7 @@ export function challengePage(ctx,challenge) {
       'Escreva sua solução. Use $…$ para fórmulas no texto.'))+'">\n'+esc(draft.text)+'</textarea></label>'+
     '<details class="folder" id="draft-preview"><summary>Pré-visualização</summary><div id="preview-content">'+draftMarkup(draft.text??'',draft.format)+'</div></details>'+
     '<label class="field"><span>Dificuldade encontrada</span><select class="control" name="difficulty" required><option value="">Selecione uma dificuldade</option>'+
-    difficulties.map(([id,label])=>'<option value="'+esc(id)+'" '+(draft.difficulty===id?'selected':'')+'>'+esc(technical?id+' · '+label:label)+'</option>').join('')+'</select></label>'+
+    difficulties.map(([id,label])=>'<option value="'+esc(id)+'" '+(draftDifficulty===id?'selected':'')+'>'+esc(technical?id+' · '+label:label)+'</option>').join('')+'</select></label>'+
     '<button class="btn primary" type="submit" '+(blocked?'disabled':'')+'>'+icon('check','sm')+' Enviar tentativa</button></form></section>'+
     '<section class="card pad"><div class="row between wrap"><h2>Solução e revisor</h2>'+badge(current?'Acesso liberado':'Bloqueados',current?'s4':'')+'</div>'+
     (current?'<label class="field area"><span>Tentativa consultada</span><select class="control" id="attempt-pick">'+records.map(a=>'<option value="'+esc(a.id)+'" '+(a.id===current.id?'selected':'')+'>'+sDate(a.submittedAt)+' · '+duration(Math.floor(a.elapsedMs/1000))+'</option>').join('')+'</select></label>'+

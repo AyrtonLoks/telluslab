@@ -10,12 +10,20 @@
     "build": "node scripts/build.mjs",
     "start": "npm run build && node serve.mjs",
     "test": "npm run build && node --test",
-    "verify:git": "node scripts/verify-git-index.mjs"
+    "verify:git": "node scripts/verify-git-index.mjs",
+    "lint": "node scripts/lint.mjs",
+    "typecheck": "tsc --noEmit --strict --module nodenext --target es2022 packages/tellus-bridge/index.d.mts",
+    "bridge:sync": "npm run build && node scripts/bridge-parity.mjs --sync",
+    "bridge:verify": "npm run build && node scripts/bridge-parity.mjs",
+    "domains:validate": "npm run build"
   },
   "dependencies": {
     "@fontsource/noto-sans-jp": "5.3.1",
     "@highlightjs/cdn-assets": "11.11.1",
     "katex": "0.16.21",
     "mermaid": "11.17.2"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3"
   }
 }

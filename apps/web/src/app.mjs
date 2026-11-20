@@ -1,5 +1,5 @@
 import {createLearningState,refreshLearning,advancementGuard,pendingPath,applyStudyEvent,planSession,
-  challengeBrief,updateTimer,submitAttempt,createAreaRegistry,createDomainPacks,MATH_DOMAIN,PROG_DOMAIN,ECON_DOMAIN,PHYS_DOMAIN,ENG_DOMAIN,HUM_DOMAIN,LANG_DOMAIN,LIT_DOMAIN,CROSS_MODES,
+  challengeBrief,updateTimer,submitAttempt,createAreaRegistry,createDomainPacks,interdisciplinaryPath,MATH_DOMAIN,PROG_DOMAIN,ECON_DOMAIN,PHYS_DOMAIN,ENG_DOMAIN,HUM_DOMAIN,LANG_DOMAIN,LIT_DOMAIN,CROSS_MODES,
   recordSolution,recordFeedback,reviewCard,completeMicroReview,exportSnapshot,importSnapshot} from '../../../packages/learning-core/index.mjs';
 import {openStore,read,change} from './store.mjs';
 import {icon,esc,math,draftMarkup,btn,paintMath,iso,fmt,dayKey,dateFor,moveDay,duration} from './ui.mjs';
@@ -19,6 +19,14 @@ import {readingEntry,restoreReadingNotebook} from '../../../domains/literature/n
 import {readingForm} from './notebook.mjs';
 import {BRIDGE_FORMAT,MAX_SNAPSHOT_BYTES,createTellusPediaBridge} from '../../../packages/telluspedia-bridge/index.mjs';
 
+import { SNAPSHOT_KEY, parseLabLink, pediaUrl, readSnapshot, validateRegistry, validateManifest,
+  validateSnapshot } from '../../../packages/tellus-bridge/index.mjs';
+import { buildBridgeSnapshot } from './bridge-snapshot.mjs';
+
+let registry, manifest, bridgeBus;
+let lastPublished;
+const pediaBase = '__TELLUSPEDIA_URL__';
+
 const main=document.querySelector('#main');
 const sidebar=document.querySelector('#sidebar');
 const bar=document.querySelector('#bar');
@@ -30,20 +38,20 @@ const nav=[
 ];
 
 const domainOptions = [
-  {id:MATH_DOMAIN, area:MATHEMATICS_AREA, label:'Matemática', file:'catalogo.json',
+  {id:MATH_DOMAIN, area:MATHEMATICS_AREA, slug:'mathematics', label:'Matemática',
     profile:{makeLocalChallenge,localAuthoringMode,localFeedback,generationMessages,registerChallenge,solutionMessages,socraticMessages}},
-  {id:PROG_DOMAIN, area:'programming', label:'Programação', file:'programming.json', profile:programmingProfile},
-  {id:ECON_DOMAIN, area:'economics-finance', label:'Economia e Finanças', file:'economics-finance.json', profile:economicsProfile},
-  {id:PHYS_DOMAIN, area:'physics', label:'Física e Óptica', file:'physics.json', profile:physicsProfile},
-  {id:ENG_DOMAIN, area:'engineering', label:'Engenharia', file:'engineering.json', profile:engineeringProfile},
-  {id:HUM_DOMAIN, area:'humanities', label:'Humanidades e Filosofia', file:'humanities.json', profile:humanitiesProfile},
-  {id:LANG_DOMAIN, area:'languages', label:'Idiomas', file:'languages.json', profile:languageProfile,
+  {id:PROG_DOMAIN, area:'programming', label:'Programação', profile:programmingProfile},
+  {id:ECON_DOMAIN, area:'economics-finance', label:'Economia e Finanças', profile:economicsProfile},
+  {id:PHYS_DOMAIN, area:'physics', label:'Física e Óptica', profile:physicsProfile},
+  {id:ENG_DOMAIN, area:'engineering', label:'Engenharia', profile:engineeringProfile},
+  {id:HUM_DOMAIN, area:'humanities', label:'Humanidades e Filosofia', profile:humanitiesProfile},
+  {id:LANG_DOMAIN, area:'languages', label:'Idiomas', profile:languageProfile,
     launchPath:'./lab?domain=languages', textRendering:'languages'},
-  {id:LIT_DOMAIN, area:'literature', label:'Literatura', file:'literature.json', profile:literatureProfile,
+  {id:LIT_DOMAIN, area:'literature', label:'Literatura', profile:literatureProfile,
     launchPath:'./lab?domain=literature', textRendering:'literature'}
 ];
 const consolidated = 'consolidado';
-const domainForArea = new Map(domainOptions.map(pack=>[pack.area,pack.id]));
+const domainForArea = new Map(domainOptions.flatMap(pack=>[pack.area,pack.slug??pack.area].map(slug=>[slug,pack.id])));
 let db, initial, catalog, dag, bus, toastTimer, bridge, domainPacks, saved, activeDomain, profile;
 let provider=null;
 let workspace;
@@ -57,6 +65,14 @@ const route=()=>{
   if(domainForArea.has(parts[0])) return {domainId:domainForArea.get(parts[0]),parts:parts.slice(1)};
   const query=integrationQuery();
   const domainId=domainForArea.get(query.get('domain')??query.get('area'))??MATH_DOMAIN;
+  if(!parts.length && query.has('domain') && !query.has('topic') && !query.has('area')) {
+    try {
+      const {nodeId,trackId}=parseLabLink(query,registry,manifest);
+      return {domainId,parts:nodeId?['trilhas',nodeId.split(':')[1]]:trackId?['trilhas']:[],trackId};
+    } catch(error) {
+      return {domainId,parts:['integracao'],launchError:error.message};
+    }
+  }
   if(location.pathname.endsWith('/lab')&&!parts.length&&query.has('topic')) {
     try {
       return {domainId,parts:['trilhas',bridge.parseLaunch(query).topicId]};
@@ -106,7 +122,7 @@ function navigation(active) {
 
 function render() {
   if(!saved) return;
-  const {domainId,parts:[section='inicio',id,subid]}=route();
+  const {domainId,parts:[section='inicio',id,subid],trackId,launchError}=route();
   if(domainId===consolidated) {
     activeDomain=consolidated;
     delete document.body.dataset.textDomain;
@@ -135,7 +151,21 @@ function render() {
   ctx.topicHref=topicHref;
   ctx.domainId=domainId;
   ctx.incomingMicro=incomingMicro(saved,domainId);
+  ctx.explorePedia=topicId=>manifest.links.filter(link=>link.nodeIds.includes(domainId+':'+topicId))
+    .map(link=>({title:link.title,href:pediaUrl(pediaBase,link,{slug:pack.slug??pack.area,nodeId:domainId+':'+topicId})}));
+  if(trackId && ctx.appliedTrack!==location.href) {
+    ctx.appliedTrack=location.href;
+    ctx.track=trackId;
+    ctx.selected=catalog.topics.find(topic=>topic.trackId===trackId)?.id;
+  }
   ctx.target=ctx.targetRef?pendingPath(catalog,dag,ctx.state.progress,ctx.targetRef):null;
+  ctx.globalPath=ctx.targetRef&&ctx.includeCrossTarget?interdisciplinaryPath(domainPacks,
+    Object.fromEntries(Object.entries(saved.domains).map(([id,value])=>
+      [id,refreshLearning(domainPacks.domains.get(id).dag,value.state,ctx.now)])),
+    domainId,ctx.targetRef,true).map(ref=>{
+      const [domainId,topicId]=ref.split(':');
+      return domainPacks.references.get(domainId+'::'+topicId);
+    }):null;
   if(section==='trilhas'&&dag.byId.has(id)&&ctx.selected!==id) {
     ctx.selected=id;
     ctx.track=dag.byId.get(id).trackId;
@@ -145,7 +175,7 @@ function render() {
     case 'biblioteca':main.innerHTML=libraryPage(ctx,id);break;
     case 'calendario':main.innerHTML=agendaPage(ctx);break;
     case 'historico':main.innerHTML=historyPage(ctx);break;
-    case 'integracao':main.innerHTML=integrationPage();break;
+    case 'integracao':main.innerHTML=integrationPage(launchError);break;
     case 'pratica': {
       const session=id==='session'&&workspace.state.sessions[subid];
       const challenge=workspace.state.challenges[id];
@@ -178,7 +208,10 @@ function incomingMicro(data,domainId) {
 
 function displaySaved(data,{display=true,notify=true}={}) {
   saved=data;
-  if(notify) bus?.postMessage('changed');
+  if(notify) {
+    bus?.postMessage('changed');
+    publishBridge();
+  }
   if(display) render();
   else if(activeDomain!==consolidated) {
     workspace=saved.domains[activeDomain];
@@ -295,7 +328,7 @@ function settings() {
   showDialog('Dados e configurações',
     '<div class="stack"><section><h3>Snapshot do progresso</h3><p class="small">O arquivo contém seu histórico, cartões, evidências, cronômetros e rascunhos. Em Literatura, inclui o caderno de close reading.</p>'+
     '<div class="row wrap">'+exports.map(pack=>btn('export','Exportar JSON · '+pack.label,'download','primary','data-domain="'+pack.id+'"')).join('')+
-    btn('import','Importar JSON','upload')+
+    btn('export-bridge','Exportar os oito domínios','download')+btn('import','Importar JSON','upload')+
     '<input type="file" accept=".json,application/json" id="snapshot-file" hidden></div></section><hr>'+
     '<section><h3>Pré-requisitos interdisciplinares</h3><form class="stack" id="prerequisite-form">'+
     '<label class="field"><span>Regra entre domínios</span><select class="control" name="mode">'+
@@ -321,7 +354,8 @@ function clocks() {
   });
 }
 
-function pickTarget(kind,id) {
+function pickTarget(kind,id,includeCross=ctx.includeCrossTarget) {
+  ctx.includeCrossTarget=includeCross;
   ctx.targetRef={kind,id};
   ctx.targetKind=kind;
   if(kind==='topic') {
@@ -422,45 +456,72 @@ async function protectedMaterial(kind,id,attemptId) {
   }
 }
 
-function integrationPage() {
-  let context;
-  let message;
-  try {
-    const query=integrationQuery();
-    if (!location.hash.includes('?') && domainForArea.has(location.hash.slice(1).split('/')[0])) {
-      query.delete('domain');
-      query.delete('topic');
-      query.delete('area');
-    }
-    if (!query.has('area')&&!query.has('domain')) query.set('area',domainPacks.domains.get(activeDomain).area);
-    context=bridge.parseLaunch(query);
-  } catch (error) { message=error.message; }
-  const pack=context&&domainPacks.domains.get(domainForArea.get(context.areaId));
-  return page('TellusPedia','Abra o tópico de referência ou troque um snapshot JSON.')+
-    '<section class="card pad stack">'+(pack ? '<h2>'+pack.label+'</h2>'+
-      (context.topicId ? '<a class="btn" href="'+esc(topicHref(pack.id,context.topicId))+'">Abrir '+esc(pack.dag.byId.get(context.topicId).title)+'</a>' : '')+
-      '<p class="small">O arquivo inclui seu progresso e pode incluir rascunhos e soluções. Compartilhe apenas quando desejar.</p>'+
-      '<div class="row wrap">'+btn('export','Exportar para TellusPedia','download','primary','data-envelope="true" data-domain="'+pack.id+'"')+
-      btn('import','Importar JSON','upload')+'</div>' : '<p class="notice warning">'+esc(message)+'</p>')+'</section>';
+function integrationPage(launchError) {
+  return page('TellusPedia','Explore dossiês e use o snapshot para levar seu progresso à enciclopédia.')+
+    '<section class="card pad stack">'+(launchError?'<p class="notice warning">'+esc(launchError)+'</p>':'')+
+    '<a class="btn" href="'+esc(new URL('/telluslab',pediaBase).href)+'">Abrir TellusLab Hub</a>'+
+    '<div class="row wrap">'+btn('export-bridge','Exportar os oito domínios','download','primary')+
+    btn('import','Importar JSON','upload')+'</div></section>';
 }
 
-async function downloadSnapshot({envelope,domain=activeDomain}={}) {
-  const data=await read(db)??saved;
+function publishBridge() {
+  try {
+    const {exportedAt,...progress}=buildBridgeSnapshot(registry,domainPacks,saved,iso());
+    const signature=JSON.stringify(progress);
+    if(signature===lastPublished) return;
+    const snapshot={...progress,exportedAt};
+    localStorage.setItem(SNAPSHOT_KEY,JSON.stringify(snapshot));
+    lastPublished=signature;
+    bridgeBus?.postMessage(SNAPSHOT_KEY);
+  } catch {
+    // A exportação em arquivo continua disponível se o armazenamento compartilhado falhar.
+  }
+}
+
+function domainSnapshot(data,domain,now) {
   const pack=domainPacks.domains.get(domain);
   const old=data.domains[domain];
-  const now=iso();
   const scope=scoped(data,domain,now);
-  const x=JSON.parse(exportSnapshot(refreshLearning(scope,old.state,now),pack.catalog,now,scope));
-  x.workspace={drafts:old.drafts,authored:old.authored};
-  if(domain===LIT_DOMAIN) x.workspace.closeReading=old.closeReading??{};
-  const payload=envelope?bridge.wrapSnapshot(pack.area,x):x;
-  const path=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
+  const snapshot=JSON.parse(exportSnapshot(refreshLearning(scope,old.state,now),pack.catalog,now,scope));
+  snapshot.workspace={drafts:old.drafts,authored:old.authored};
+  if(domain===LIT_DOMAIN) snapshot.workspace.closeReading=old.closeReading??{};
+  return snapshot;
+}
+
+function download(payload,name) {
+  const json=JSON.stringify(payload,null,2);
+  if(new TextEncoder().encode(json).byteLength>MAX_SNAPSHOT_BYTES) throw new Error('O snapshot excede 10 MiB.');
+  const path=URL.createObjectURL(new Blob([json],{type:'application/json'}));
   const a=document.createElement('a');
   a.href=path;
-  a.download=(envelope?'telluslab-snapshot-':'')+pack.area+'-'+dayKey()+'.json';
+  a.download=name+'-'+dayKey()+'.json';
   a.click();
   setTimeout(()=>URL.revokeObjectURL(path),10_000);
   status('Snapshot exportado.');
+}
+
+async function downloadSnapshot({domain=activeDomain}={}) {
+  download(domainSnapshot(await read(db)??saved,domain,iso()),domainPacks.domains.get(domain).area);
+}
+
+async function downloadBridge() {
+  const data=await read(db)??saved;
+  const now=iso();
+  const domains=Object.fromEntries(registry.domains.map(({id})=>[id,domainSnapshot(data,id,now)]));
+  const snapshot=buildBridgeSnapshot(registry,domainPacks,data,now,{prerequisiteMode:data.prerequisiteMode,domains});
+  download(validateSnapshot(snapshot,registry),'telluslab-snapshot-global');
+}
+
+function bridgeWorkspace(contents) {
+  const snapshot=readSnapshot(contents,registry);
+  if(!snapshot.backup) throw new Error('Escolha um arquivo exportado pelo TellusLab com backup dos oito domínios.');
+  const domains={};
+  for(const {id} of registry.domains) {
+    const {pack,workspace}=workspaceFromSnapshot(JSON.stringify(snapshot.backup.domains[id]));
+    if(pack.id!==id) throw new Error('Backup atribuído ao domínio errado.');
+    domains[id]=workspace;
+  }
+  return {domains,prerequisiteMode:snapshot.backup.prerequisiteMode};
 }
 
 function workspaceFromSnapshot(contents) {
@@ -533,6 +594,7 @@ const actions={
   solution:({id,attempt})=>protectedMaterial('solution',id,attempt),
   feedback:({id,attempt})=>protectedMaterial('feedback',id,attempt),
   export:downloadSnapshot,
+  'export-bridge':downloadBridge,
   import:()=>{
     if(!dialog.open) settings();
     dialog.querySelector('#snapshot-file').click();
@@ -540,10 +602,13 @@ const actions={
   'apply-import':async ()=>{
     if(!importCandidate) throw new Error('Selecione um snapshot.');
   
-    const {pack,workspace:restored}=importCandidate;
-    await commit(()=>restored,{domainId:pack.id});
+    const {combined,pack,workspace:restored}=importCandidate;
+    if(combined) displaySaved(await change(db,initial,()=>combined));
+    else await commit(()=>restored,{domainId:pack.id});
     importCandidate=null;
-    dialog.close();location.hash=domainPath(pack.id,'inicio');status('Snapshot restaurado.');
+    dialog.close();
+    location.hash=combined?consolidated:domainPath(pack.id,'inicio');
+    status('Snapshot restaurado.');
   },
   'disable-provider':()=>{provider=null;settings();status('Provedor desativado.');}
 };
@@ -580,7 +645,7 @@ document.addEventListener('submit',async e=>{
     if(button) button.disabled=true;
     const f=new FormData(form);
     if(type==='plan-form') await generate(form);
-    if(type==='target-form') pickTarget(f.get('kind'),f.get('id'));
+    if(type==='target-form') pickTarget(f.get('kind'),f.get('id'),f.has('cross'));
     if(type==='book-filters') {ctx.bookSearch=String(f.get('query')).trim();ctx.bookCategory=f.get('category');render();}
     if(type==='language-pair-form') {
       const pair={id:uid(),topicId:f.get('topic'),term:f.get('term'),meaning:f.get('meaning'),notes:f.get('notes'),
@@ -681,10 +746,12 @@ document.addEventListener('change',async e=>{
   if(el.id==='snapshot-file'&&el.files?.[0]) {
     try {
       if(el.files[0].size>MAX_SNAPSHOT_BYTES) throw new Error('O snapshot excede 10 MiB.');
-      importCandidate=workspaceFromSnapshot(await el.files[0].text());
-      const {pack,workspace:restored}=importCandidate;
-      showDialog('Restaurar snapshot','<div class="stack"><p>O snapshot contém '+Object.keys(restored.state.attempts).length+
-        ' tentativa(s). A restauração substitui o progresso de '+pack.label+' neste navegador.</p><div class="row wrap">'+
+      const contents=await el.files[0].text();
+      importCandidate=JSON.parse(contents)?.kind==='TellusLabSnapshotV1'
+        ? {combined:bridgeWorkspace(contents)} : workspaceFromSnapshot(contents);
+      const label=importCandidate.pack?.label??'todos os oito domínios';
+      showDialog('Restaurar snapshot','<div class="stack"><p>A restauração substitui o progresso de '+esc(label)+
+        ' neste navegador.</p><div class="row wrap">'+
         btn('apply-import','Restaurar snapshot','upload','primary')+btn('close','Cancelar')+'</div></div>');
     }catch(error){status(error.message,true);}
   }
@@ -693,6 +760,7 @@ document.addEventListener('change',async e=>{
 function renderRoute() {
   if(renderRoute.currentUrl===location.href) return;
   renderRoute.currentUrl=location.href;
+  ctx.appliedTrack=null;
   ctx.attemptPick=null;
   ctx.reveal=null;
   sidebar.classList.remove('open');
@@ -712,10 +780,18 @@ dialog.addEventListener('close',()=>{importCandidate=null;});
 
 try {
   const loaded=await Promise.all(domainOptions.map(async pack=>{
-    const response=await fetch('./data/'+pack.file);
+    const response=await fetch(new URL('./domains/'+(pack.slug??pack.area)+'/catalog.json',import.meta.url));
     if(!response.ok) throw new Error('Não foi possível carregar o catálogo de '+pack.label+'.');
     return {...pack,catalog:await response.json()};
   }));
+  const loadBridge=async name=>{
+    const response=await fetch(new URL('./bridge/'+name+'.json',import.meta.url));
+    if(!response.ok) throw new Error('Não foi possível carregar o contrato TellusBridge.');
+    return response.json();
+  };
+  const [registryData,manifestData]=await Promise.all(['registry','manifest'].map(loadBridge));
+  registry=validateRegistry(registryData);
+  manifest=validateManifest(manifestData,registry);
   domainPacks=createDomainPacks(loaded);
   initial={prerequisiteMode:'flexible',domains:Object.fromEntries([...domainPacks.domains].map(([id,pack])=>
     [id,{state:createLearningState(pack.dag),drafts:{},authored:{}}]))};
@@ -728,15 +804,18 @@ try {
       domains:{...initial.domains,...domains}};
   });
   if(typeof BroadcastChannel!=='undefined') {
+    bridgeBus=new BroadcastChannel(SNAPSHOT_KEY);
     bus=new BroadcastChannel('laboratorio-matematica-changes');
     bus.onmessage=async ()=>{
       displaySaved(await read(db)??saved,
         {notify:false,display:!dialog.open&&!document.activeElement?.closest('#attempt-form')});
     };
   }
+  publishBridge();
   render();
   setInterval(clocks,250);
   setInterval(()=>{
+    publishBridge();
     if(!workspace) return;
     const next=fresh();
     if(next.events!==workspace.state.events) {
@@ -744,7 +823,10 @@ try {
       stateChange((s,scope)=>refreshLearning(scope,s,iso()),{display}).catch(error=>status(error.message,true));
     }
   },30_000);
-  if('serviceWorker' in navigator) navigator.serviceWorker.register('./sw.js').catch(()=>{});
+  if('serviceWorker' in navigator) {
+    const worker=new URL('./sw.js',import.meta.url);
+    navigator.serviceWorker.register(worker,{scope:worker.pathname.startsWith('/lab-assets/')?'/lab':'./'}).catch(()=>{});
+  }
 } catch(error) {
   main.innerHTML='<section class="card pad"><h1>Não foi possível abrir o laboratório</h1><p class="area">'+esc(error.message)+'</p><p>Recarregue a página em uma janela com IndexedDB disponível.</p></section>';
 }

@@ -1,7 +1,7 @@
 import {spawn} from 'node:child_process';
 import {createServer} from 'node:http';
 import {createReadStream} from 'node:fs';
-import {stat} from 'node:fs/promises';
+import {readFile,stat} from 'node:fs/promises';
 import {extname} from 'node:path';
 
 const mime={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8',
@@ -17,9 +17,18 @@ const server=createServer(async(req,res)=>{
     const url=new URL(req.url,'http://localhost');
     const path=decodeURIComponent(url.pathname);
     if(path.split('/').some(p=>p==='..'||p.includes('\\'))) throw new Error('path');
-    const file=new URL('.'+(['/', '/lab'].includes(path)?'/index.html':path),root);
+    const assetPath=path.startsWith('/lab-assets/')?path.slice('/lab-assets'.length):path;
+    const documentPath=['/', '/lab', '/lab/'].includes(assetPath);
+    const file=new URL('.'+(documentPath?'/index.html':assetPath),root);
+    if(path==='/lab'||path==='/lab/'||path==='/lab-assets/index.html'||path==='/lab-assets/') {
+      const html=await readFile(new URL('./index.html',root),'utf8');
+      res.writeHead(200,{'Content-Type':mime['.html'],'Cache-Control':'no-cache'});
+      res.end(html.replaceAll('href="./','href="/lab-assets/').replaceAll('src="./','src="/lab-assets/'));
+      return;
+    }
     if(!file.href.startsWith(root.href)||!(await stat(file)).isFile()) throw new Error('missing');
-    res.writeHead(200,{'Content-Type':mime[extname(file.pathname)]??'application/octet-stream','Cache-Control':'no-cache'});
+    res.writeHead(200,{'Content-Type':mime[extname(file.pathname)]??'application/octet-stream','Cache-Control':'no-cache',
+      ...(path==='/lab-assets/sw.js'&&{'Service-Worker-Allowed':'/lab'})});
     createReadStream(file).pipe(res);
   } catch {res.writeHead(404).end('Não encontrado');}
 });

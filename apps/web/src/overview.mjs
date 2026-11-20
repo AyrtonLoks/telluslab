@@ -88,6 +88,23 @@ export function dashboard(ctx) {
     '<section class="card pad"><div class="row between"><h2>Progresso por trilha</h2></div><div class="stack area">'+ctx.catalog.tracks.map(t=>progressBar(summary.tracks[t.id],t.title)).join('')+'</div></section></div></div>';
 }
 
+function gapRadar(summary) {
+  const point=(index,scale)=>{
+    const angle=index*2*Math.PI/summary.length-Math.PI/2;
+    return [150+Math.cos(angle)*92*scale,130+Math.sin(angle)*92*scale].map(value=>value.toFixed(1));
+  };
+  const ring=scale=>summary.map((_,index)=>point(index,scale).join(',')).join(' ');
+  const gap=summary.map(({weighted},index)=>point(index,1-(weighted.ratio??0)).join(',')).join(' ');
+  return '<svg viewBox="0 0 300 260" role="img" aria-label="Radar de lacunas por domínio. Quanto maior a distância do centro, maior o peso pendente." class="gap-radar">'+
+    [0.25,0.5,0.75,1].map(scale=>'<polygon points="'+ring(scale)+'" fill="none" stroke="currentColor" opacity=".22"/>').join('')+
+    summary.map(({pack},index)=>{
+      const [x,y]=point(index,1);
+      const [tx,ty]=point(index,1.22);
+      return '<line x1="150" y1="130" x2="'+x+'" y2="'+y+'" stroke="currentColor" opacity=".22"/>'+
+        '<text x="'+tx+'" y="'+ty+'" dy=".35em" text-anchor="middle" fill="currentColor" font-size="10">'+esc(pack.id.slice(4))+'</text>';
+    }).join('')+'<polygon points="'+gap+'" fill="#0e7490" fill-opacity=".30" stroke="#0e7490" stroke-width="2"/></svg>';
+}
+
 export function consolidatedPage(packs,data,topicHref,now) {
   const summary=[...packs.domains.values()].map(pack=>{
     const state=refreshLearning(pack.dag,data.domains[pack.id].state,now);
@@ -95,6 +112,9 @@ export function consolidatedPage(packs,data,topicHref,now) {
       validated:Object.values(state.progress).filter(mastered).length};
   });
   const sum=pick=>summary.reduce((total,item)=>total+pick(item),0);
+  const due=summary.flatMap(({pack,state})=>Object.values(state.cards)
+    .filter(card=>state.progress[card.topicId].state==='S6'&&card.dueAt<=now)
+    .map(card=>({pack,card}))).sort((a,b)=>a.card.dueAt.localeCompare(b.card.dueAt));
   const graphEdges=packs.dag.order.flatMap(ref=>{
     const target=packs.references.get(ref);
     const cross=packs.dag.byId.get(ref).crossPrerequisites??[];
@@ -107,6 +127,13 @@ export function consolidatedPage(packs,data,topicHref,now) {
       packs.dag.order.length+' macrotemas validados</p><div class="area">'+progressBar({
         ratio:sum(item=>item.weighted.completed)/sum(item=>item.weighted.total)
       },'Progresso por complexidade')+'</div></section>'+
+    '<div class="grid-two area"><section class="card pad"><h2>Radar de lacunas</h2><p class="small">Peso curricular pendente por domínio</p>'+
+      gapRadar(summary)+'<ul class="compact-list">'+summary.map(({pack,weighted})=>'<li>'+esc(pack.label)+' · '+percent(1-(weighted.ratio??0))+'</li>').join('')+'</ul></section>'+
+    '<section class="card pad"><h2>Fila global FSRS-5</h2><p class="small">'+due.length+' cartões vencidos</p>'+
+      (due.length?'<ul class="compact-list area">'+due.map(({pack,card})=>'<li><a href="'+esc(topicHref(pack.id,card.topicId))+'">'+
+        esc(pack.label+' · '+pack.dag.byId.get(card.topicId).title)+'</a><p class="small">'+esc(fmt(card.dueAt,{dateStyle:'short',timeStyle:'short'}))+
+        ' · <a href="#'+esc(pack.area)+'/pratica/revisoes">Revisar no domínio</a></p></li>').join('')+'</ul>':'<p class="small">Nenhuma revisão vencida.</p>')+
+      '</section></div>'+
     '<div class="grid-two area">'+summary.map(({pack,state,weighted,validated})=>
       '<section class="card pad"><div class="row between wrap"><h2>'+esc(pack.label)+'</h2>'+(pack.launchPath?
           '<a class="btn" data-domain-launch href="'+esc(pack.launchPath)+'">'+icon('right','sm')+' Abrir domínio</a>':
