@@ -11,7 +11,8 @@ const modeLabel={provider:'Gerado por IA',worked:'Resolução comentada',guided:
 const draftHints={
   physics:'Use $…$ para equações e blocos cercados python, svg ou mermaid.',
   'economics-finance':'Use $…$ para fórmulas, tabelas Markdown para fluxos de caixa e blocos python ou mermaid.',
-  engineering:'Use $…$ para equações, tabelas Markdown e blocos cercados python, svg ou mermaid.'
+  engineering:'Use $…$ para equações, tabelas Markdown e blocos cercados python, svg ou mermaid.',
+  humanities:'Use > para citações em bloco, *itálico* para títulos, referências ABNT ou APA e blocos mermaid para linhas do tempo ou mapas conceituais.'
 };
 function group(title,items,make=x=>'<li>'+math(x)+'</li>') {
   return '<div class="area"><h3>'+title+'</h3><ol>'+items.map(make).join('')+'</ol></div>';
@@ -95,6 +96,7 @@ export function challengePage(ctx,challenge) {
   const row=cls=>'<span class="clock '+cls+'" data-clock="'+esc(id)+'">00:00:00</span>';
   const focus=challenge.block==='mixed'?'Problema misto':challenge.modality;
   const technical=Boolean(ctx.catalog?.difficulties);
+  const textFormat=ctx.catalog?.slug==='humanities'?'Texto (Markdown)':technical?'Texto técnico (Markdown e LaTeX)':'LaTeX';
   const difficulties=Object.entries(ctx.catalog?.difficulties??Object.fromEntries(DIFFICULTIES.map(label=>[label,label])));
   const guards=challenge.topicIds.map(topicId=>advancementGuard(ctx.dag,ctx.state.progress,topicId));
   const blocked=guards.some(guard=>guard.crossBlocked);
@@ -115,7 +117,7 @@ export function challengePage(ctx,challenge) {
       (blocked&&clockButton[0]!=='pause'?' disabled':''))+
       '<span class="small">O tempo exclui as pausas.</span></div>'+
     '<form id="attempt-form" class="stack area" data-id="'+esc(id)+'"><label class="field"><span>Formato do rascunho</span><select class="control" name="format">'+
-    ['latex','code'].map(fmt=>'<option value="'+fmt+'" '+((draft.format??'latex')===fmt?'selected':'')+'>'+(fmt==='latex'?(technical?'Texto técnico (Markdown e LaTeX)':'LaTeX'):'Código')+'</option>').join('')+
+    ['latex','code'].map(fmt=>'<option value="'+fmt+'" '+((draft.format??'latex')===fmt?'selected':'')+'>'+(fmt==='latex'?textFormat:'Código')+'</option>').join('')+
     '</select></label><label class="field"><span>Rascunho</span><textarea class="control editor" name="draft" required spellcheck="false" placeholder="'+
     (draftHints[ctx.catalog?.slug]??(technical?'Use blocos cercados com o nome da linguagem ou mermaid.':
       'Escreva sua solução. Use $…$ para fórmulas no texto.'))+'">'+esc(draft.text)+'</textarea></label>'+

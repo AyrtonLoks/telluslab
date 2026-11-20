@@ -7,6 +7,7 @@ import { programmingSeed } from '../packages/curriculum-programming/seed.mjs';
 import { economicsSeed } from '../domains/economics-finance/seed.mjs';
 import { physicsSeed } from '../domains/physics/seed.mjs';
 import { engineeringSeed } from '../domains/engineering/seed.mjs';
+import { humanitiesSeed } from '../domains/humanities/seed.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const target = resolve(root, 'dist');
@@ -35,7 +36,7 @@ for (const font of fonts) await emit('vendor/katex/fonts/' + font, await readFil
 
 for (const path of ['packages/learning-core', 'packages/curriculum-mathematics',
   'packages/curriculum-programming', 'packages/telluspedia-bridge',
-  'domains/economics-finance', 'domains/physics', 'domains/engineering']) {
+  'domains/economics-finance', 'domains/physics', 'domains/engineering', 'domains/humanities']) {
   for (const name of (await readdir(resolve(root, path))).sort()) {
     if (!name.endsWith('.mjs') || ['parse.mjs','seed.mjs'].includes(name)) continue;
     await emit(path + '/' + name, await read(path + '/' + name));
@@ -61,11 +62,13 @@ for (const [path, source] of [
 const math = mathematicsSeed();
 const programming = programmingSeed(math);
 const physics = physicsSeed(math, programming);
+const economics = economicsSeed(math, programming);
 await emit('data/catalogo.json', JSON.stringify(math, null, 2) + '\n');
 await emit('data/programming.json', JSON.stringify(programming, null, 2) + '\n');
-await emit('data/economics-finance.json', JSON.stringify(economicsSeed(math, programming), null, 2) + '\n');
+await emit('data/economics-finance.json', JSON.stringify(economics, null, 2) + '\n');
 await emit('data/physics.json', JSON.stringify(physics, null, 2) + '\n');
 await emit('data/engineering.json', JSON.stringify(engineeringSeed(math, physics, programming), null, 2) + '\n');
+await emit('data/humanities.json', JSON.stringify(humanitiesSeed(math, economics, programming, physics), null, 2) + '\n');
 const hash = createHash('sha256').update(swSource);
 const included = [...files].sort();
 for (const path of included) {

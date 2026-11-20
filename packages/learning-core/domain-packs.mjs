@@ -6,6 +6,7 @@ export const PROG_DOMAIN = 'DOM-PROG';
 export const ECON_DOMAIN = 'DOM-ECON';
 export const PHYS_DOMAIN = 'DOM-PHYS';
 export const ENG_DOMAIN = 'DOM-ENG';
+export const HUM_DOMAIN = 'DOM-HUM';
 export const CROSS_MODES = Object.freeze(['flexible', 'strict']);
 const domainPattern = /^DOM-[A-Z][A-Z0-9-]*$/;
 

@@ -25,6 +25,7 @@ dialog{color:var(--ink);border:1px solid var(--line);border-radius:18px;width:mi
 .graph-lines path.cross-edge { stroke:#855a35; stroke-dasharray:6 4; stroke-width:2 }
 .math-copy pre code.hljs { background:transparent; padding:0 }
 .technical-diagram { display:block; max-width:100%; height:auto; margin:.65rem auto }
+.math-copy blockquote { margin:.65rem 0; padding:.2rem .85rem; border-inline-start:3px solid var(--line) }
 @media (min-width:671px) and (max-width:850px) {
   .domain-switch > span { display:none }
   .domain-switch .control { min-width:0; padding-inline:4px; font-size:.7rem }

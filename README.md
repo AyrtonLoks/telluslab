@@ -1,6 +1,6 @@
 # TellusLab
 
-Laboratório local-first de estudo e prática, complementar ao TellusPedia. **Matemática** tem 40 obras e 88 macrotemas. **Programação e Ciência da Computação** tem 41 obras e 49 macrotemas, com 50 conexões para pré-requisitos de Matemática. **Economia e Finanças** tem 19 obras e 32 macrotemas, com 41 conexões para Matemática e duas para Programação. **Física e Óptica** tem 7 obras e 37 macrotemas, com 75 conexões para Matemática e quatro para Programação. **Engenharia** tem 5 obras e 28 macrotemas, com 65 conexões para Matemática, Física e Programação.
+Laboratório local-first de estudo e prática, complementar ao TellusPedia. **Matemática** tem 40 obras e 88 macrotemas. **Programação e Ciência da Computação** tem 41 obras e 49 macrotemas, com 50 conexões para pré-requisitos de Matemática. **Economia e Finanças** tem 19 obras e 32 macrotemas, com 41 conexões para Matemática e duas para Programação. **Física e Óptica** tem 7 obras e 37 macrotemas, com 75 conexões para Matemática e quatro para Programação. **Engenharia** tem 5 obras e 28 macrotemas, com 65 conexões para Matemática, Física e Programação. **Humanidades e Filosofia** tem 53 obras e 36 macrotemas, com 18 conexões para Matemática, Economia, Programação e Física.
 
 ## Rodar no Linux ou WSL
 
@@ -19,7 +19,7 @@ O servidor tenta a porta 4175 e, se ela estiver ocupada, tenta a 4183. Para esco
 
 No PowerShell, use `npm.cmd ci` e `npm.cmd start`. O atalho `Abrir-Laboratorio.cmd` também fica disponível após instalar as dependências.
 
-Use o seletor na barra lateral para alternar entre os cinco domínios e a Visão Consolidada TellusLab. Em **Dados e configurações**, o Modo Flexível (padrão) mostra avisos sobre pré-requisitos cruzados. O Modo Estrito bloqueia o avanço e a prática quando um pré-requisito cruzado está por validar ou tem revisão vencida. As dificuldades `DIF-PROG-01`, `DIF-ECON-01`, `DIF-PHYS-01`, `DIF-PHYS-04` e `DIF-ENG-01` geram micro-revisões para os ancestrais curriculares locais e de outros domínios. Para abrir Física e Óptica diretamente, use `/lab?domain=physics` na porta exibida no terminal. Para Engenharia, use `/lab?domain=engineering`.
+Use o seletor na barra lateral para alternar entre os seis domínios e a Visão Consolidada TellusLab. Em **Dados e configurações**, o Modo Flexível (padrão) mostra avisos sobre pré-requisitos cruzados. O Modo Estrito bloqueia o avanço e a prática quando um pré-requisito cruzado está por validar ou tem revisão vencida. As dificuldades `DIF-PROG-01`, `DIF-ECON-01`, `DIF-PHYS-01`, `DIF-PHYS-04`, `DIF-ENG-01` e `DIF-HUM-01` geram micro-revisões para os ancestrais curriculares locais e de outros domínios. Para abrir Física e Óptica diretamente, use `/lab?domain=physics` na porta exibida no terminal. Para Engenharia, use `/lab?domain=engineering`. Para Humanidades e Filosofia, use `/lab?domain=humanities`.
 
 Para migrar progresso, use **Snapshot → Exportar JSON** no aplicativo antigo e **Snapshot → Importar JSON** no novo. A importação restaura o domínio identificado no arquivo. Se mantiver exatamente a origem `http://127.0.0.1:4175`, o mesmo navegador e o mesmo perfil, a base IndexedDB existente é migrada automaticamente. Encerre o servidor antigo antes de iniciar o novo na mesma porta. A porta pode ser configurada em `MATH_LAB_PORT`. Origens diferentes têm armazenamento separado.
 
@@ -29,6 +29,7 @@ Para migrar progresso, use **Snapshot → Exportar JSON** no aplicativo antigo e
 - Proficiência S0–S6, evidências e critérios de aceite. Cartões FSRS-5, diagnóstico e micro-revisões.
 - Sessões de 45–75 minutos com 50% avanço, 30% revisão e 20% problemas mistos. Desafios com cronômetro e editor LaTeX ou código.
 - Solução comentada e revisor após tentativa gravada, histórico e snapshots JSON. A autoria local inclui seis macrotemas com exercícios resolvidos. Os demais usam a prática guiada pelo Capstone. A integração com um provedor de IA é opcional.
+- Em Humanidades, use Markdown para preservar referências ABNT ou APA, `>` para citações em bloco e blocos `mermaid` para linhas do tempo e mapas conceituais. A rubrica pede evidência textual, contexto histórico e a formulação da objeção mais forte com réplica.
 
 ## Estrutura
 
@@ -41,6 +42,7 @@ Para migrar progresso, use **Snapshot → Exportar JSON** no aplicativo antigo e
 | `domains/economics-finance/` | Especificação, seed, modalidades e autoria local de Economia e Finanças |
 | `domains/physics/` | Especificação, seed, modalidades e autoria local de Física e Óptica |
 | `domains/engineering/` | Especificação, seed, modalidades e autoria local de Engenharia |
+| `domains/humanities/` | Especificação, seed, modalidades e rubrica de Humanidades e Filosofia |
 | `packages/telluspedia-bridge/` | Contexto de navegação e envelopes JSON versionados |
 | `scripts/` | Build e auditoria dos arquivos efetivamente staged no Git |
 | `test/` | Regressões de domínio, integração, renderização KaTeX e compatibilidade |

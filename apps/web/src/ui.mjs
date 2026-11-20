@@ -149,7 +149,7 @@ function formula(parent, tex, source, display = false) {
 }
 
 function inline(parent, content) {
-  const parts = content.split(/(\$\$[\s\S]+?\$\$|(?<!\\)\$[^$\n]+?(?<!\\)\$|\\\([\s\S]+?\\\)|\\\[[\s\S]+?\\\]|\x60[^\x60\n]+\x60|\*\*[^*]+\*\*)/);
+  const parts = content.split(/(\$\$[\s\S]+?\$\$|(?<!\\)\$[^$\n]+?(?<!\\)\$|\\\([\s\S]+?\\\)|\\\[[\s\S]+?\\\]|\x60[^\x60\n]+\x60|\*\*[^*]+\*\*|(?<![\w*\\])\*[^*\s](?:[^*\n]*?[^*\s])?\*(?![\w*]))/);
   for (let i=0; i<parts.length; i++) {
     const part = parts[i];
     if (!part) continue;
@@ -157,8 +157,9 @@ function inline(parent, content) {
       const pair = part.startsWith('$$') || part.startsWith('\\');
       if (part[0] === '$' || part[0] === '\\') formula(parent, part.slice(pair?2:1, pair?-2:-1), part, part.startsWith('$$') || part.startsWith('\\['));
       else {
-        const node = document.createElement(part[0]==='*' ? 'strong' : 'code');
-        node.textContent = part.slice(part[0]==='*'?2:1, part[0]==='*'?-2:-1);
+        const bold = part.startsWith('**');
+        const node = document.createElement(bold ? 'strong' : part[0] === '*' ? 'em' : 'code');
+        node.textContent = bold ? part.slice(2, -2) : part.slice(1, -1);
         parent.append(node);
       }
     } else {
@@ -178,9 +179,24 @@ function tableCells(line) {
 }
 
 function richText(parent, content) {
-  const lines = content.split('\n');
+  const lines = content.split(/\r?\n/);
   let start = 0;
-  for (let i = 0; i + 1 < lines.length; i++) {
+  const quotePrefix = /^ {0,3}>(?:[ \t]|$)/;
+  for (let i = 0; i < lines.length; i++) {
+    if (quotePrefix.test(lines[i])) {
+      inline(parent, lines.slice(start, i).join('\n'));
+      const quote = document.createElement('blockquote');
+      const quotedLines = [];
+      while (i < lines.length && quotePrefix.test(lines[i])) {
+        quotedLines.push(lines[i++].replace(quotePrefix, ''));
+      }
+      inline(quote, quotedLines.join('\n'));
+      parent.append(quote);
+      start = i;
+      i--;
+      continue;
+    }
+    if (i + 1 === lines.length) break;
     if (!lines[i].includes('|')) continue;
     const header = tableCells(lines[i]);
     const divider = tableCells(lines[i + 1]);

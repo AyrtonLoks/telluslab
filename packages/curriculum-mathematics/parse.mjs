@@ -143,7 +143,7 @@ function parseTopic(block, level, sanitizations, format) {
 
   const repair = format.modalityRepairs?.[id];
   const correctedModes = repair && modes?.text === repair.original ? repair.corrected :
-    crossText && modes?.text.match(/^\|---\|---\|[-*] (Modalidades de Prática:.*)$/)?.[1];
+    crossText && modes?.text.match(/^\|---\|---\|(?:[-*] )?(Modalidades de Prática:.*)$/)?.[1];
   if (correctedModes) {
     sanitizations.push({topicId:id, sourceLine:modes.number, original:modes.text, corrected:correctedModes});
   }
