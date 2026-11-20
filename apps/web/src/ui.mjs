@@ -148,7 +148,7 @@ function formula(parent, tex, source, display = false) {
   }
 }
 
-function inline(parent, content) {
+function inline(parent, content, textDomain) {
   const parts = content.split(/(\$\$[\s\S]+?\$\$|(?<!\\)\$[^$\n]+?(?<!\\)\$|\\\([\s\S]+?\\\)|\\\[[\s\S]+?\\\]|\x60[^\x60\n]+\x60|\*\*[^*]+\*\*|(?<![\w*\\])\*[^*\s](?:[^*\n]*?[^*\s])?\*(?![\w*]))/);
   for (let i=0; i<parts.length; i++) {
     const part = parts[i];
@@ -162,6 +162,21 @@ function inline(parent, content) {
         node.textContent = bold ? part.slice(2, -2) : part.slice(1, -1);
         parent.append(node);
       }
+    } else if (textDomain === 'languages') {
+      let last=0;
+      for (const match of part.matchAll(/\{([\p{Script=Han}\p{Script=Hiragana}\p{Script=Katakana}々ー]+)\|([\p{Script=Hiragana}\p{Script=Katakana}ー・]+)\}/gu)) {
+        parent.append(part.slice(last, match.index));
+        const ruby = document.createElement('ruby');
+        const reading = document.createElement('rt');
+        ruby.lang = 'ja';
+        reading.textContent = match[2];
+        ruby.append(match[1], reading);
+        parent.append(ruby);
+        last = match.index + match[0].length;
+      }
+      parent.append(part.slice(last));
+    } else if (textDomain === 'literature') {
+      parent.append(part);
     } else {
       let last=0;
       for (const match of part.matchAll(tokenRe)) {
@@ -178,19 +193,19 @@ function tableCells(line) {
   return line.trim().replace(/^\||(?<!\\)\|$/g, '').split(/(?<!\\)\|/).map(cell => cell.trim());
 }
 
-function richText(parent, content) {
+function richText(parent, content, textDomain) {
   const lines = content.split(/\r?\n/);
   let start = 0;
   const quotePrefix = /^ {0,3}>(?:[ \t]|$)/;
   for (let i = 0; i < lines.length; i++) {
     if (quotePrefix.test(lines[i])) {
-      inline(parent, lines.slice(start, i).join('\n'));
+      inline(parent, lines.slice(start, i).join('\n'), textDomain);
       const quote = document.createElement('blockquote');
       const quotedLines = [];
       while (i < lines.length && quotePrefix.test(lines[i])) {
         quotedLines.push(lines[i++].replace(quotePrefix, ''));
       }
-      inline(quote, quotedLines.join('\n'));
+      inline(quote, quotedLines.join('\n'), textDomain);
       parent.append(quote);
       start = i;
       i--;
@@ -213,7 +228,7 @@ function richText(parent, content) {
     }
     if (!rows.length) continue;
 
-    inline(parent, lines.slice(start, i).join('\n'));
+    inline(parent, lines.slice(start, i).join('\n'), textDomain);
     const wrapper = document.createElement('div');
     wrapper.className = 'table-wrap';
     wrapper.tabIndex = 0;
@@ -225,7 +240,7 @@ function richText(parent, content) {
       const th = document.createElement('th');
       th.scope = 'col';
       th.style.textAlign = alignment[column];
-      inline(th, title);
+      inline(th, title, textDomain);
       head.append(th);
     }
     const body = table.createTBody();
@@ -234,7 +249,7 @@ function richText(parent, content) {
       for (const [column, cell] of cells.entries()) {
         const element = row.insertCell();
         element.style.textAlign = alignment[column];
-        inline(element, cell);
+        inline(element, cell, textDomain);
       }
     }
     wrapper.append(table);
@@ -242,7 +257,7 @@ function richText(parent, content) {
     start = end;
     i = end - 1;
   }
-  inline(parent, lines.slice(start).join('\n'));
+  inline(parent, lines.slice(start).join('\n'), textDomain);
 }
 
 export function paintMath(root = document) {
@@ -255,13 +270,20 @@ export function paintMath(root = document) {
       continue;
     }
     const content = el.dataset.math;
+    const textDomain = el.closest('[data-text-domain]')?.dataset.textDomain;
     let last = 0;
     for (const match of content.matchAll(/^ {0,3}(\x60{3,}|~{3,})[ \t]*([a-z0-9_+#.-]*)[ \t]*\r?\n([\s\S]*?)^ {0,3}\1[ \t]*(?:\r?\n|$)/gmi)) {
-      richText(el, content.slice(last, match.index));
-      codeBlock(el, match[3], match[2].toLowerCase());
+      richText(el, content.slice(last, match.index), textDomain);
+      const language = match[2].toLowerCase();
+      if (textDomain === 'literature' && ['versos','escansao'].includes(language)) {
+        const verse = document.createElement('pre');
+        verse.className = 'verse';
+        verse.textContent = match[3];
+        el.append(verse);
+      } else codeBlock(el, match[3], language);
       last = match.index + match[0].length;
     }
-    richText(el, content.slice(last));
+    richText(el, content.slice(last), textDomain);
   }
 }
 

@@ -30,3 +30,12 @@ dialog{color:var(--ink);border:1px solid var(--line);border-radius:18px;width:mi
   .domain-switch > span { display:none }
   .domain-switch .control { min-width:0; padding-inline:4px; font-size:.7rem }
 }
+
+[data-text-domain="languages"] :is(.math-copy, .editor) {
+  font-family: Inter, "Segoe UI", Arial, "Noto Sans JP", sans-serif;
+  line-height:1.7;
+}
+[data-text-domain="languages"] ruby { ruby-position:over }
+[data-text-domain="languages"] rt { font-size:.62em }
+.verse, .math-copy pre.verse { white-space:pre-wrap; overflow-wrap:anywhere }
+.reading-excerpt { white-space:pre-wrap; overflow-wrap:anywhere; margin:0; border-inline-start:3px solid var(--line); padding-inline-start:.85rem }

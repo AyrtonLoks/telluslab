@@ -1,5 +1,6 @@
 import {trackView,pendingPath,mastered,advancementGuard,weightedProgress} from '../../../packages/learning-core/index.mjs';
 import {esc,math,btn,aBtn,icon,badge,percent,normalize} from './ui.mjs';
+import {notebookPanel} from './notebook.mjs';
 
 export const labels=['Bloqueado','Disponível','Teoria concluída','Fixação mecânica','Prova validada','Revisão em dia','Revisão vencida'];
 export const titleFor=(dag,id)=>dag.byId.get(id)?.title ?? dag.cross?.reference(id)?.title ?? id;
@@ -14,7 +15,9 @@ const trackLabels={
   'economics-finance':['Base','Economia','Finanças corporativas','Sistema e risco','Renda fixa'],
   physics:['Mecânica I','Mecânica II','Ondas e termodinâmica','Eletromagnetismo','Física moderna','Óptica'],
   engineering:['Fundamentos','Termofluidos e potência','Automotiva','Mecatrônica','Optomecânica'],
-  humanities:['Metacognição e método','História da Filosofia','Filosofia política','Ciências Sociais','Macro-história','Comunicação e vínculos']
+  humanities:['Metacognição e método','História da Filosofia','Filosofia política','Ciências Sociais','Macro-história','Comunicação e vínculos'],
+  languages:['Inglês','Japonês Kanji','Português Instrumental'],
+  literature:['Épica e poesia','Prosa portuguesa e europeia','Romance e conto brasileiro','Dramaturgia e Lusofonia africana']
 };
 export const progressBar=(item,text)=>'<div class="progress-line"><div class="row between"><span>'+esc(text)+'</span><strong>'+percent(item.ratio)+'</strong></div><div class="bar-track" role="progressbar" aria-label="'+esc(text)+'" aria-valuenow="'+Math.round(100*(item.ratio??0))+'"><div style="width:'+Math.round(100*(item.ratio??0))+'%"></div></div></div>';
 const cut=(s,n)=>s.length>n?s.slice(0,n-1)+'…':s;
@@ -114,6 +117,7 @@ export function topicPanel(ctx,topic) {
     (guard.crossPending?.length?'<p class="notice warning">'+(guard.crossBlocked?'Avanço bloqueado pelo Modo Estrito.':'Modo Flexível. Revise estes pré-requisitos enquanto avança.')+
       ' '+guard.crossPending.map(ref=>crossLink(ctx,ref)).join(', ')+'</p>':'')+
     '<div class="row wrap">'+btn('set-target','Definir como alvo','target','','data-kind="topic" data-id="'+topic.id+'"')+
+    (ctx.canLinkTechnicalTerm?btn('language-pair','Vincular termo em Idiomas','plus','','data-topic="'+topic.id+'"'):'')+
     (guard.allowed&&stage?btn('study',stage[1],'check','primary','data-topic="'+topic.id+'" data-kind="'+stage[0]+'"'):'')+
     (!guard.crossBlocked&&(guard.allowed||['S4','S5'].includes(p.state))?btn('new','Praticar macrotema','practice','tinted','data-topic="'+topic.id+'"'):'')+'</div>'+
     '<details class="folder area" open><summary>Subtemas · '+Object.keys(p.subtopics).length+'/'+topic.subtopics.length+'</summary><ul class="compact-list">'+rows+'</ul></details>'+
@@ -154,7 +158,8 @@ export function libraryPage(ctx,bookId) {
       '<section class="card pad"><div class="row between wrap">'+badge(book.id)+' '+badge(book.category.title)+
       btn('set-target','Ver caminho pendente','target','primary','data-kind="book" data-id="'+book.id+'"')+'</div><div class="area">'+
       progressBar(metrics.books[book.id],'Progresso da obra')+'</div></section><section class="card pad area"><h2>Macrotemas vinculados</h2><ul class="compact-list">'+topics.map(t=>'<li><div class="row between wrap"><a href="#trilhas/'+t.id+'"><strong>'+t.id+' · '+esc(t.title)+'</strong></a>'+stateTag(ctx.state.progress[t.id])+'</div>'+
-      t.bibliography.filter(r=>r.bookId===book.id).map(r=>'<small>'+esc(r.role)+' · '+esc(r.chapters)+'</small>').join(' ')+'</li>').join('')+'</ul></section>';
+      t.bibliography.filter(r=>r.bookId===book.id).map(r=>'<small>'+esc(r.role)+' · '+esc(r.chapters)+'</small>').join(' ')+'</li>').join('')+'</ul></section>'+
+      (ctx.catalog.slug==='literature'?notebookPanel(book,ctx.workspace.closeReading):'');
   }
   return page('Biblioteca','As '+books.length+' obras do currículo, com capítulos vinculados e progresso ponderado pela complexidade.')+
     '<form id="book-filters" class="filters"><label class="field" style="flex:1"><span>Buscar obra</span><input id="book-query" class="control" name="query" value="'+esc(ctx.bookSearch)+'" placeholder="Título, autor ou código"></label>'+

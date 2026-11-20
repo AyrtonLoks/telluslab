@@ -13,6 +13,7 @@
     "verify:git": "node scripts/verify-git-index.mjs"
   },
   "dependencies": {
+    "@fontsource/noto-sans-jp": "5.3.1",
     "@highlightjs/cdn-assets": "11.11.1",
     "katex": "0.16.21",
     "mermaid": "11.17.2"

@@ -1,5 +1,5 @@
 PRAGMA foreign_keys = ON;
-PRAGMA user_version = 2;
+PRAGMA user_version = 3;
 
 CREATE TABLE domain_pack (
   id TEXT PRIMARY KEY CHECK (id GLOB 'DOM-[A-Z]*' AND instr(id, ':') = 0),
@@ -121,16 +121,20 @@ CREATE INDEX proficiency_event_time ON proficiency_event(occurred_at);
 CREATE TABLE srs_card (
   id TEXT PRIMARY KEY, topic_id TEXT NOT NULL REFERENCES topic(id),
   subtopic_id TEXT REFERENCES subtopic(id), criterion_id TEXT REFERENCES acceptance_criterion(id),
-  kind TEXT NOT NULL CHECK (kind IN ('statement','counterexample','proofIdea')),
+  pair_id TEXT, source_topic_id TEXT REFERENCES topic(id),
+  kind TEXT NOT NULL CHECK (kind IN ('statement','counterexample','proofIdea','recognition','production')),
   front_latex TEXT NOT NULL, back_latex TEXT NOT NULL, scheduler TEXT NOT NULL CHECK (scheduler = 'FSRS-5'),
   stability REAL CHECK (stability > 0), difficulty REAL CHECK (difficulty BETWEEN 1 AND 10),
   created_at TEXT NOT NULL, last_review TEXT, due_at TEXT NOT NULL,
   repetitions INTEGER NOT NULL CHECK (repetitions >= 0),
   lapses INTEGER NOT NULL CHECK (lapses BETWEEN 0 AND repetitions),
-  CHECK ((subtopic_id IS NULL) <> (criterion_id IS NULL)),
+  CHECK ((kind IN ('recognition','production') AND pair_id IS NOT NULL AND subtopic_id IS NULL AND criterion_id IS NULL
+          AND topic_id GLOB 'DOM-LANG::*') OR
+         (kind IN ('statement','counterexample','proofIdea') AND pair_id IS NULL AND source_topic_id IS NULL
+          AND ((subtopic_id IS NULL) <> (criterion_id IS NULL)))),
   CHECK ((repetitions = 0 AND last_review IS NULL AND stability IS NULL AND difficulty IS NULL) OR
          (repetitions > 0 AND last_review IS NOT NULL AND stability IS NOT NULL AND difficulty IS NOT NULL)),
-  UNIQUE(subtopic_id,kind), UNIQUE(criterion_id,kind)
+  UNIQUE(subtopic_id,kind), UNIQUE(criterion_id,kind), UNIQUE(pair_id,kind)
 ) STRICT;
 CREATE INDEX srs_card_due ON srs_card(due_at, topic_id);
 CREATE TABLE srs_review (
@@ -140,6 +144,15 @@ CREATE TABLE srs_review (
   difficulty REAL NOT NULL CHECK (difficulty BETWEEN 1 AND 10), UNIQUE(card_id, reviewed_at)
 ) STRICT;
 CREATE INDEX srs_review_time ON srs_review(reviewed_at);
+
+CREATE TABLE close_reading (
+  id TEXT PRIMARY KEY, book_id TEXT NOT NULL REFERENCES book(id) CHECK (book_id GLOB 'DOM-LIT::*'),
+  updated_at TEXT NOT NULL, excerpt TEXT NOT NULL, author TEXT NOT NULL, surname TEXT NOT NULL,
+  year TEXT NOT NULL, locator TEXT NOT NULL, place TEXT NOT NULL, publisher TEXT NOT NULL,
+  edition TEXT NOT NULL DEFAULT '', scansion TEXT NOT NULL DEFAULT '',
+  analysis TEXT NOT NULL, characters TEXT NOT NULL DEFAULT ''
+) STRICT;
+CREATE INDEX close_reading_book ON close_reading(book_id, updated_at);
 
 CREATE TABLE study_session (
   id TEXT PRIMARY KEY, domain_id TEXT NOT NULL REFERENCES domain_pack(id),

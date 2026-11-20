@@ -1,7 +1,8 @@
 import { createDag, mastered } from './dag.mjs';
 import { createLearningState } from './fsm.mjs';
-import { FSRS_VERSION, timestamp } from './fsrs.mjs';
+import { FSRS_VERSION, PAIRED_CARD_KINDS, timestamp } from './fsrs.mjs';
 import { DIFFICULTIES, isCrossPrerequisiteGap } from './agenda.mjs';
+import { LANG_DOMAIN } from './domain-packs.mjs';
 
 export const SNAPSHOT_VERSION = 1;
 const record = value => value && typeof value === 'object' && !Array.isArray(value);
@@ -38,6 +39,7 @@ export function importSnapshot(json, catalog, dag = createDag(catalog.topics)) {
       const criterion = topic.criteria.find(x => x.id === id);
       require(criterion && value?.approved === true && value.criterionId === id && text(value.evidence) &&
         value.withoutConsultation === (criterion.kind === 'mandatory' ? true : null), id);
+      dag.validateCriterion?.(criterion, value.evidence);
       timestamp(value.at);
     }
     if (Number(p.state[1]) >= 2) {
@@ -61,11 +63,25 @@ export function importSnapshot(json, catalog, dag = createDag(catalog.topics)) {
   }
   for (const [id, card] of Object.entries(s.cards)) {
     const topic = dag.byId.get(card?.topicId);
-    require(card?.id === id && ['statement', 'counterexample', 'proofIdea'].includes(card.kind) &&
+    require(card?.id === id &&
       id === card.sourceId + ':' + card.kind && topic && mastered(s.progress[topic.id]) &&
-      [...topic.subtopics, ...topic.criteria.filter(c => c.kind === 'mandatory')].some(item => item.id === card.sourceId) &&
       card.scheduler === FSRS_VERSION && text(card.frontLatex) && text(card.backLatex) &&
       integer(card.lapses) && integer(card.repetitions) && card.lapses <= card.repetitions, 'cartão ' + id);
+    if (PAIRED_CARD_KINDS.includes(card.kind)) {
+      require(catalog.domainId === LANG_DOMAIN && /^(?:3\.3|4\.[123])$/u.test(topic.id) &&
+        /^pair:[a-zA-Z0-9-]{1,80}$/u.test(card.sourceId) &&
+        PAIRED_CARD_KINDS.every(kind => {
+          const other = s.cards[card.sourceId + ':' + kind];
+          return other?.topicId === card.topicId && other.sourceRef === card.sourceRef &&
+            other.createdAt === card.createdAt;
+        }) && (card.sourceRef === null || (topic.id === '3.3' && typeof card.sourceRef === 'string' &&
+          /^DOM-(?:MATH|PROG|ECON|PHYS|ENG)::\d+\.\d+$/u.test(card.sourceRef) &&
+          (!dag.cross || dag.cross.reference(card.sourceRef)))), 'par de cartões ' + id);
+    } else {
+      require(['statement', 'counterexample', 'proofIdea'].includes(card.kind) &&
+        [...topic.subtopics, ...topic.criteria.filter(c => c.kind === 'mandatory')]
+          .some(item => item.id === card.sourceId), 'origem do cartão ' + id);
+    }
     const created = timestamp(card.createdAt);
     require(timestamp(card.dueAt) >= created, 'agenda do cartão ' + id);
     require(card.repetitions === 0 ? card.lastReview === null && card.stability === null && card.difficulty === null :
@@ -150,6 +166,8 @@ export function importSnapshot(json, catalog, dag = createDag(catalog.topics)) {
       Array.isArray(feedback.questions) && feedback.questions.length > 0 && feedback.questions.every(text) &&
       Array.isArray(feedback.checks) && feedback.checks.every(c => text(c?.category) && text(c?.excerpt) && text(c?.observation)) &&
       timestamp(feedback.at) >= timestamp(s.attempts[id].submittedAt), 'feedback ' + id);
+    const attempt = s.attempts[id];
+    dag.validateFeedback?.(attempt, s.challenges[attempt.challengeId], feedback);
   }
   return s;
 }
