@@ -12,7 +12,9 @@ const draftHints={
   physics:'Use $…$ para equações e blocos cercados python, svg ou mermaid.',
   'economics-finance':'Use $…$ para fórmulas, tabelas Markdown para fluxos de caixa e blocos python ou mermaid.',
   engineering:'Use $…$ para equações, tabelas Markdown e blocos cercados python, svg ou mermaid.',
-  humanities:'Use > para citações em bloco, *itálico* para títulos, referências ABNT ou APA e blocos mermaid para linhas do tempo ou mapas conceituais.'
+  humanities:'Use > para citações em bloco, *itálico* para títulos, referências ABNT ou APA e blocos mermaid para linhas do tempo ou mapas conceituais.',
+  languages:'Use {漢字|かんじ} para furigana, /θɪŋk/ para IPA e uma tabela Markdown para comparar antes e depois.',
+  literature:'Use Excerto:, Citação:, Forma: e Voz: em linhas próprias. Preserve as quebras dos versos e cite a edição em ABNT.'
 };
 function group(title,items,make=x=>'<li>'+math(x)+'</li>') {
   return '<div class="area"><h3>'+title+'</h3><ol>'+items.map(make).join('')+'</ol></div>';
@@ -64,8 +66,11 @@ export function reviewPage(ctx,sessionId) {
   return page('Fila de revisão','Recupere a resposta de memória antes de olhar o verso e avaliar sua retenção.',
     aBtn(sessionId?'pratica/session/'+esc(sessionId):'pratica','Voltar à prática','practice'))+
     '<div class="grid-two"><section class="card pad"><div class="row between wrap"><h2>Cartões '+(scope?'da sessão':'de retenção')+'</h2>'+badge(cards.length+' na fila','s1')+'</div>'+
+    (!scope&&ctx.profile?.pairedTopics?.(ctx.dag,ctx.state).length?'<p class="area">'+btn('language-pair','Adicionar par de cartões','plus','tinted')+'</p>':'')+
     (!scope&&all.length?'<p class="area">'+btn('review-early',ctx.reviewEarly?'Ver apenas vencidos':'Incluir cartões futuros','','clear')+'</p>':'')+
-    (current?'<div class="review-q area"><div class="row wrap">'+badge(kinds[current.kind])+'<a class="small" href="#trilhas/'+current.topicId+'">'+current.topicId+' · '+esc(titleFor(ctx.dag,current.topicId))+'</a></div><div class="area">'+math(current.frontLatex)+'</div></div>'+
+    (current?'<div class="review-q area"><div class="row wrap">'+badge(ctx.profile?.cardLabel?.(current)??kinds[current.kind])+'<a class="small" href="#trilhas/'+current.topicId+'">'+current.topicId+' · '+esc(titleFor(ctx.dag,current.topicId))+'</a></div>'+
+    (current.sourceRef?'<p class="small area">Origem · '+crossLink(ctx,current.sourceRef)+'</p>':'')+
+    '<div class="area">'+math(current.frontLatex)+'</div></div>'+
     (reveal?'<div class="area"><h3>Verso</h3>'+math(current.backLatex)+'<div class="row wrap area">'+grade.map((name,i)=>btn('rate',name,'',i===2?'primary':'','data-grade="'+(i+1)+'" data-id="'+esc(current.id)+'"')).join('')+'</div></div>':
       '<div class="row wrap area">'+btn('reveal','Mostrar resposta','repeat','primary','data-id="'+esc(current.id)+'"')+(cards.length>1?btn('skip-card','Pular','','','data-id="'+esc(cards[(cards.indexOf(current)+1)%cards.length].id)+'"'):'')+'</div>'):
       '<p class="empty">Nenhum cartão disponível nesta fila.</p>')+'</section>'+
@@ -96,7 +101,7 @@ export function challengePage(ctx,challenge) {
   const row=cls=>'<span class="clock '+cls+'" data-clock="'+esc(id)+'">00:00:00</span>';
   const focus=challenge.block==='mixed'?'Problema misto':challenge.modality;
   const technical=Boolean(ctx.catalog?.difficulties);
-  const textFormat=ctx.catalog?.slug==='humanities'?'Texto (Markdown)':technical?'Texto técnico (Markdown e LaTeX)':'LaTeX';
+  const textFormat=['humanities','languages','literature'].includes(ctx.catalog?.slug)?'Texto (Markdown)':technical?'Texto técnico (Markdown e LaTeX)':'LaTeX';
   const difficulties=Object.entries(ctx.catalog?.difficulties??Object.fromEntries(DIFFICULTIES.map(label=>[label,label])));
   const guards=challenge.topicIds.map(topicId=>advancementGuard(ctx.dag,ctx.state.progress,topicId));
   const blocked=guards.some(guard=>guard.crossBlocked);
@@ -120,7 +125,7 @@ export function challengePage(ctx,challenge) {
     ['latex','code'].map(fmt=>'<option value="'+fmt+'" '+((draft.format??'latex')===fmt?'selected':'')+'>'+(fmt==='latex'?textFormat:'Código')+'</option>').join('')+
     '</select></label><label class="field"><span>Rascunho</span><textarea class="control editor" name="draft" required spellcheck="false" placeholder="'+
     (draftHints[ctx.catalog?.slug]??(technical?'Use blocos cercados com o nome da linguagem ou mermaid.':
-      'Escreva sua solução. Use $…$ para fórmulas no texto.'))+'">'+esc(draft.text)+'</textarea></label>'+
+      'Escreva sua solução. Use $…$ para fórmulas no texto.'))+'">\n'+esc(draft.text)+'</textarea></label>'+
     '<details class="folder" id="draft-preview"><summary>Pré-visualização</summary><div id="preview-content">'+draftMarkup(draft.text??'',draft.format)+'</div></details>'+
     '<label class="field"><span>Dificuldade encontrada</span><select class="control" name="difficulty" required><option value="">Selecione uma dificuldade</option>'+
     difficulties.map(([id,label])=>'<option value="'+esc(id)+'" '+(draft.difficulty===id?'selected':'')+'>'+esc(technical?id+' · '+label:label)+'</option>').join('')+'</select></label>'+
@@ -131,7 +136,8 @@ export function challengePage(ctx,challenge) {
       '<div class="row wrap area">'+btn('solution',sol?'Gerar novamente':metadata.mode==='guided'?'Abrir roteiro comentado':'Abrir solução comentada','book','tinted','data-id="'+esc(id)+'" data-attempt="'+esc(current.id)+'"')+
       btn('feedback',feed?'Revisar novamente':'Revisar tentativa','bulb','','data-id="'+esc(id)+'" data-attempt="'+esc(current.id)+'"')+'</div>'+
       (sol?'<details class="folder area" open><summary>'+ (metadata.mode==='guided'?'Roteiro comentado':'Solução comentada')+'</summary>'+math(sol)+'</details>':'')+
-      (feed?'<details class="folder area" open><summary>Perguntas do revisor</summary>'+group('Questões para a próxima versão',feed.questions)+
+      (feed?'<details class="folder area" open><summary>Perguntas do revisor</summary>'+
+        badge({needsRevision:'Revisão necessária',coherent:'Coerente',insufficientEvidence:'Evidência insuficiente'}[feed.assessment])+group('Questões para a próxima versão',feed.questions)+
         (feed.checks.length?group('Observações',feed.checks,c=>'<li><strong>'+esc(c.category)+'</strong>'+math(c.excerpt)+math(c.observation)+'</li>'):'')+'</details>':''):
       '<div class="notice area">'+icon('lock','sm')+' Envie uma tentativa com tempo cronometrado, rascunho e dificuldade para abrir esta seção.</div>')+
     '</section></div></div>';

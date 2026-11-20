@@ -1,5 +1,5 @@
 import {createLearningState,refreshLearning,advancementGuard,pendingPath,applyStudyEvent,planSession,
-  challengeBrief,updateTimer,submitAttempt,createAreaRegistry,createDomainPacks,MATH_DOMAIN,PROG_DOMAIN,ECON_DOMAIN,PHYS_DOMAIN,ENG_DOMAIN,HUM_DOMAIN,CROSS_MODES,
+  challengeBrief,updateTimer,submitAttempt,createAreaRegistry,createDomainPacks,MATH_DOMAIN,PROG_DOMAIN,ECON_DOMAIN,PHYS_DOMAIN,ENG_DOMAIN,HUM_DOMAIN,LANG_DOMAIN,LIT_DOMAIN,CROSS_MODES,
   recordSolution,recordFeedback,reviewCard,completeMicroReview,exportSnapshot,importSnapshot} from '../../../packages/learning-core/index.mjs';
 import {openStore,read,change} from './store.mjs';
 import {icon,esc,math,draftMarkup,btn,paintMath,iso,fmt,dayKey,dateFor,moveDay,duration} from './ui.mjs';
@@ -13,6 +13,10 @@ import * as economicsProfile from '../../../domains/economics-finance/profile.mj
 import * as physicsProfile from '../../../domains/physics/profile.mjs';
 import * as engineeringProfile from '../../../domains/engineering/profile.mjs';
 import * as humanitiesProfile from '../../../domains/humanities/profile.mjs';
+import * as languageProfile from '../../../domains/languages/profile.mjs';
+import * as literatureProfile from '../../../domains/literature/profile.mjs';
+import {readingEntry,restoreReadingNotebook} from '../../../domains/literature/notebook.mjs';
+import {readingForm} from './notebook.mjs';
 import {BRIDGE_FORMAT,MAX_SNAPSHOT_BYTES,createTellusPediaBridge} from '../../../packages/telluspedia-bridge/index.mjs';
 
 const main=document.querySelector('#main');
@@ -32,7 +36,11 @@ const domainOptions = [
   {id:ECON_DOMAIN, area:'economics-finance', label:'Economia e Finanças', file:'economics-finance.json', profile:economicsProfile},
   {id:PHYS_DOMAIN, area:'physics', label:'Física e Óptica', file:'physics.json', profile:physicsProfile},
   {id:ENG_DOMAIN, area:'engineering', label:'Engenharia', file:'engineering.json', profile:engineeringProfile},
-  {id:HUM_DOMAIN, area:'humanities', label:'Humanidades e Filosofia', file:'humanities.json', profile:humanitiesProfile}
+  {id:HUM_DOMAIN, area:'humanities', label:'Humanidades e Filosofia', file:'humanities.json', profile:humanitiesProfile},
+  {id:LANG_DOMAIN, area:'languages', label:'Idiomas', file:'languages.json', profile:languageProfile,
+    launchPath:'./lab?domain=languages', textRendering:'languages'},
+  {id:LIT_DOMAIN, area:'literature', label:'Literatura', file:'literature.json', profile:literatureProfile,
+    launchPath:'./lab?domain=literature', textRendering:'literature'}
 ];
 const consolidated = 'consolidado';
 const domainForArea = new Map(domainOptions.map(pack=>[pack.area,pack.id]));
@@ -49,7 +57,7 @@ const route=()=>{
   if(domainForArea.has(parts[0])) return {domainId:domainForArea.get(parts[0]),parts:parts.slice(1)};
   const query=integrationQuery();
   const domainId=domainForArea.get(query.get('domain')??query.get('area'))??MATH_DOMAIN;
-  if(location.pathname==='/lab'&&!parts.length&&query.has('topic')) {
+  if(location.pathname.endsWith('/lab')&&!parts.length&&query.has('topic')) {
     try {
       return {domainId,parts:['trilhas',bridge.parseLaunch(query).topicId]};
     } catch {
@@ -101,6 +109,7 @@ function render() {
   const {domainId,parts:[section='inicio',id,subid]}=route();
   if(domainId===consolidated) {
     activeDomain=consolidated;
+    delete document.body.dataset.textDomain;
     workspace=null;
     main.innerHTML=consolidatedPage(domainPacks,saved,topicHref,iso());
     navigation(section);
@@ -111,6 +120,9 @@ function render() {
     targetRef:null,targetKind:'topic',bookCategory:'',bookSearch:'',reviewEarly:false,reviewId:null,reveal:null,attemptPick:null});
   activeDomain=domainId;
   ({catalog,profile}=pack);
+  document.body.dataset.textDomain=pack.textRendering??'';
+  ctx.profile=profile;
+  ctx.canLinkTechnicalTerm=languageProfile.TECHNICAL_DOMAINS.includes(domainId);
   workspace=saved.domains[domainId];
   dag=scoped(saved,domainId);
   const preserved=main.querySelector('.graph-scroll');
@@ -234,14 +246,21 @@ function openStudy({topic,kind,entity}) {
   const titles={completeSubtopic:'Registrar subtema',completeTheory:'Registrar fichamento',
     passPractice:'Registrar exercícios',validateCriterion:'Validar critério',validateProof:'Validar proficiência'};
   const pre=ctx.state.progress[topic];
+  const pairing=activeDomain===LANG_DOMAIN&&languageProfile.pairedTopic(topic)&&kind==='completeSubtopic';
+  const literaryCapstone=activeDomain===LIT_DOMAIN&&crit?.kind==='capstone';
   const template={
-    completeSubtopic:'<p>'+math(sub?.description)+'</p><label class="field"><span>Evidência de conclusão</span><textarea class="control" name="evidence" required></textarea></label>',
+    completeSubtopic:math(sub?.description)+'<label class="field"><span>Evidência de conclusão</span>'+
+      (pairing?'<small>Para criar dois cartões, comece com Termo: e Significado: em linhas distintas. Registre detalhes nas linhas seguintes.</small>':'')+
+      '<textarea class="control" name="evidence" required></textarea></label>',
     completeTheory:'<label class="field"><span>Fichamento da leitura ativa</span><textarea class="control" name="notes" required></textarea></label>',
     passPractice:'<div class="grid-two"><label class="field"><span>Acertos</span><input class="control" name="correct" type="number" min="0" required></label><label class="field"><span>Total resolvido</span><input class="control" name="total" type="number" min="1" required></label></div><label class="field"><span>Evidência dos exercícios</span><textarea class="control" name="evidence" required></textarea></label>',
     validateCriterion:crit?math(crit.description)+
       (crit.kind==='mandatory'?'<label class="checkbox"><input type="checkbox" name="without" required> Validei os conceitos obrigatórios sem consulta.</label>':'')+
       '<label class="checkbox"><input type="checkbox" name="approved" required> Conferi e aprovei a evidência deste critério.</label>'+
-      '<label class="field"><span>Evidência da demonstração ou Capstone</span><textarea class="control" name="evidence" required></textarea></label>':'',
+      '<label class="field"><span>Evidência da demonstração ou Capstone</span>'+
+      (literaryCapstone?'<small>Separe o excerto, a citação ABNT, a análise da forma e a identificação da voz do texto. Em Forma, cite um detalhe do excerto entre aspas.</small>':'')+
+      '<textarea class="control" name="evidence" required '+
+      (literaryCapstone?'placeholder="Excerto:&#10;Citação:&#10;Forma:&#10;Voz:"':'')+'></textarea></label>':'',
     validateProof:'<p>Subtemas registrados · '+Object.keys(pre.subtopics).length+' de '+item.subtopics.length+
       '<br>Critérios validados · '+Object.keys(pre.criteria).length+' de '+item.criteria.length+'</p><p class="small">A validação gera cartões e libera os nós dependentes elegíveis.</p>'
   };
@@ -249,10 +268,32 @@ function openStudy({topic,kind,entity}) {
     template[kind]+'<button class="btn primary" type="submit">'+icon('check','sm')+' Salvar evidência</button></form>');
 }
 
+function openLanguagePair({topic}={}) {
+  const scope=scoped(saved,LANG_DOMAIN);
+  const state=refreshLearning(scope,saved.domains[LANG_DOMAIN].state,iso());
+  const source=topic&&domainPacks.references.get(activeDomain+'::'+topic);
+  if(topic&&(!source||!languageProfile.TECHNICAL_DOMAINS.includes(source.domainId))) {
+    throw new Error('Macrotema de origem inválido.');
+  }
+  const eligible=languageProfile.pairedTopics(scope,state).filter(id=>!source||id==='3.3');
+  if(!eligible.length) throw new Error(source?
+    'Valide o macrotema 3.3 de Idiomas e confira seus pré-requisitos para vincular termos técnicos.':
+    'Valide um macrotema de Kanji ou o macrotema 3.3 para adicionar pares.');
+  showDialog('Adicionar par de cartões',
+    '<form id="language-pair-form" class="stack" data-source="'+esc(source?activeDomain+'::'+topic:'')+'">'+
+    (source?'<p>'+esc(source.title)+'</p>':'')+
+    '<label class="field"><span>Macrotema em Idiomas</span><select class="control" name="topic" required>'+
+    eligible.map(id=>option(id,id+' · '+scope.byId.get(id).title)).join('')+'</select></label>'+
+    '<label class="field"><span>Termo em inglês ou kanji</span><input class="control" name="term" required></label>'+
+    '<label class="field"><span>Significado em português</span><input class="control" name="meaning" required></label>'+
+    '<label class="field"><span>Detalhes (IPA, contraste, radical, leituras ou compostos)</span><textarea class="control" name="notes"></textarea></label>'+
+    '<button class="btn primary" type="submit">Salvar na fila FSRS</button></form>');
+}
+
 function settings() {
   const exports=activeDomain===consolidated?domainOptions:[domainPacks.domains.get(activeDomain)];
   showDialog('Dados e configurações',
-    '<div class="stack"><section><h3>Snapshot do progresso</h3><p class="small">O arquivo contém seu histórico, cartões, evidências, cronômetros e rascunhos.</p>'+
+    '<div class="stack"><section><h3>Snapshot do progresso</h3><p class="small">O arquivo contém seu histórico, cartões, evidências, cronômetros e rascunhos. Em Literatura, inclui o caderno de close reading.</p>'+
     '<div class="row wrap">'+exports.map(pack=>btn('export','Exportar JSON · '+pack.label,'download','primary','data-domain="'+pack.id+'"')).join('')+
     btn('import','Importar JSON','upload')+
     '<input type="file" accept=".json,application/json" id="snapshot-file" hidden></div></section><hr>'+
@@ -411,6 +452,7 @@ async function downloadSnapshot({envelope,domain=activeDomain}={}) {
   const scope=scoped(data,domain,now);
   const x=JSON.parse(exportSnapshot(refreshLearning(scope,old.state,now),pack.catalog,now,scope));
   x.workspace={drafts:old.drafts,authored:old.authored};
+  if(domain===LIT_DOMAIN) x.workspace.closeReading=old.closeReading??{};
   const payload=envelope?bridge.wrapSnapshot(pack.area,x):x;
   const path=URL.createObjectURL(new Blob([JSON.stringify(payload,null,2)],{type:'application/json'}));
   const a=document.createElement('a');
@@ -435,7 +477,8 @@ function workspaceFromSnapshot(contents) {
     const a=extra?.authored?.[id];
     if(['guided','worked','provider'].includes(a?.mode)) authored[id]={mode:a.mode};
   }
-  return {pack,workspace:{state,drafts,authored}};
+  const notebook=pack.id===LIT_DOMAIN?{closeReading:restoreReadingNotebook(pack.catalog,extra?.closeReading)}:{};
+  return {pack,workspace:{state,drafts,authored,...notebook}};
 }
 
 const actions={
@@ -458,7 +501,13 @@ const actions={
       dayKey(new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+Number(delta),1,15)));
     render();
   },
-  new:openPlan,study:openStudy,
+  new:openPlan,study:openStudy,'language-pair':openLanguagePair,
+  'reading-note':({book,id})=>{
+    const title=catalog.books.find(item=>item.id===book);
+    const note=id?workspace.closeReading?.[id]:null;
+    if(activeDomain!==LIT_DOMAIN||!title||(id&&note?.bookId!==book)) throw new Error('Anotação indisponível.');
+    showDialog(note?'Editar anotação':'Nova anotação',readingForm(title,note));
+  },
   timer:async ({id,kind})=>{
     await stateChange((state,scope)=>{
       if(kind!=='pause'&&state.challenges[id]?.topicIds.some(t=>advancementGuard(scope,state.progress,t).crossBlocked)) {
@@ -501,6 +550,12 @@ const actions={
 
 document.addEventListener('click',async e=>{
   if(e.target.closest('.skip')){e.preventDefault();main.focus();return;}
+  const direct=e.target.closest('a[data-domain-launch]');
+  if(direct&&e.button===0&&!e.ctrlKey&&!e.metaKey&&!e.shiftKey&&!e.altKey) {
+    e.preventDefault();
+    launchDomain(direct.href);
+    return;
+  }
   const clicked=e.target.closest('[data-act]');
   if(!clicked||!saved||busy) return;
   const fn=actions[clicked.dataset.act];
@@ -527,6 +582,26 @@ document.addEventListener('submit',async e=>{
     if(type==='plan-form') await generate(form);
     if(type==='target-form') pickTarget(f.get('kind'),f.get('id'));
     if(type==='book-filters') {ctx.bookSearch=String(f.get('query')).trim();ctx.bookCategory=f.get('category');render();}
+    if(type==='language-pair-form') {
+      const pair={id:uid(),topicId:f.get('topic'),term:f.get('term'),meaning:f.get('meaning'),notes:f.get('notes'),
+        sourceRef:form.dataset.source||null,now:iso()};
+      await stateChange((state,scope)=>languageProfile.addLanguagePair(scope,state,pair),{domainId:LANG_DOMAIN});
+      dialog.close();
+      status('Par adicionado à fila FSRS de Idiomas.');
+    }
+    if(type==='reading-form') {
+      const {book,id}=form.dataset;
+      const litCatalog=domainPacks.domains.get(LIT_DOMAIN).catalog;
+      const note=readingEntry(litCatalog,{...Object.fromEntries(f),id:id||uid(),bookId:book,at:iso()});
+      await commit(old=>{
+        if(id&&old.closeReading?.[id]?.at!==form.dataset.at) {
+          throw new Error('Esta anotação foi alterada. Feche o editor e abra a versão atual.');
+        }
+        return {...old,closeReading:{...old.closeReading,[note.id]:note}};
+      },{domainId:LIT_DOMAIN});
+      dialog.close();
+      status('Anotação salva.');
+    }
     if(type==='study-form') {
       const d=form.dataset;
       const action={kind:d.kind,notes:f.get('notes'),evidence:f.get('evidence'),correct:Number(f.get('correct')),
@@ -587,7 +662,9 @@ document.addEventListener('input',e=>{
 document.addEventListener('change',async e=>{
   const el=e.target;
   if(el.id==='domain-switch') {
-    location.hash=el.value===consolidated?consolidated:domainPath(el.value,'inicio');
+    const pack=domainPacks.domains.get(el.value);
+    if(pack?.launchPath) launchDomain(pack.launchPath);
+    else location.hash=el.value===consolidated?consolidated:domainPath(el.value,'inicio');
   }
   if(el.id==='target-kind') {
     ctx.targetKind=el.value;
@@ -613,13 +690,23 @@ document.addEventListener('change',async e=>{
   }
 });
 
-window.addEventListener('hashchange',()=>{
+function renderRoute() {
+  if(renderRoute.currentUrl===location.href) return;
+  renderRoute.currentUrl=location.href;
   ctx.attemptPick=null;
   ctx.reveal=null;
   sidebar.classList.remove('open');
   window.scrollTo(0,0);
   render();
-});
+}
+
+function launchDomain(path) {
+  history.pushState(null,'',path);
+  renderRoute();
+}
+
+window.addEventListener('hashchange',renderRoute);
+window.addEventListener('popstate',renderRoute);
 window.addEventListener('load',()=>paintMath());
 dialog.addEventListener('close',()=>{importCandidate=null;});
 

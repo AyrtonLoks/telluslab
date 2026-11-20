@@ -108,7 +108,9 @@ export function consolidatedPage(packs,data,topicHref,now) {
         ratio:sum(item=>item.weighted.completed)/sum(item=>item.weighted.total)
       },'Progresso por complexidade')+'</div></section>'+
     '<div class="grid-two area">'+summary.map(({pack,state,weighted,validated})=>
-      '<section class="card pad"><div class="row between wrap"><h2>'+esc(pack.label)+'</h2>'+aBtn(pack.area+'/inicio','Abrir domínio','right')+
+      '<section class="card pad"><div class="row between wrap"><h2>'+esc(pack.label)+'</h2>'+(pack.launchPath?
+          '<a class="btn" data-domain-launch href="'+esc(pack.launchPath)+'">'+icon('right','sm')+' Abrir domínio</a>':
+          aBtn(pack.area+'/inicio','Abrir domínio','right'))+
       '</div><p class="small">'+validated+' de '+pack.catalog.topics.length+' macrotemas validados · '+pack.catalog.books.length+
       ' obras · '+Object.values(state.cards).filter(card=>card.dueAt<=now).length+' cartões vencidos</p>'+
       '<div class="area">'+progressBar(weighted,'Progresso por complexidade')+'</div></section>').join('')+'</div>'+
