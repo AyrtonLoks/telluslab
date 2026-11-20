@@ -4,7 +4,7 @@ import { qualify } from '../learning-core/domain-packs.mjs';
 export const MODALITIES = ['Cálculo/Algébrico', 'Demonstração Formal', 'Implementação Computacional'];
 const ROLES = ['Intuição/Cálculo', 'Rigor/Prova', 'Algorítmica', 'Aplicação/Referência'];
 const listPrefix = /^\s*(?:[-+*]|\d+[.)])\s+/;
-const metadata = /^Trilha: (TRL-(?:[A-Z]+-)?0\d)\s*\|\s*Complexidade: ([1-5])\/5\s*\|\s*Pré-requisitos Diretos:\s*([^|]+?)(?:\s*\|\s*Pré-requisitos Cruzados(?: \((DOM-[A-Z]+)\))?:\s*(.+))?$/;
+const metadata = /^Trilha: (TRL-(?:[A-Z]+-)?[A-Z0-9]+)\s*\|\s*Complexidade: ([1-5])\/5\s*\|\s*Pré-requisitos Diretos:\s*([^|]+?)(?:\s*\|\s*Pré-requisitos Cruzados(?: \((DOM-[A-Z]+)\))?:\s*(.+))?$/;
 const sectionOf = /^([1-9])\.\s+[A-ZÀ-Ú]/u;
 const headingOf = /^\s{0,3}#{1,6}\s+/;
 const rootPrerequisites = '3.9, 5.9, 9.11';
@@ -50,14 +50,14 @@ export function parseSpecification(markdown, {expectedTopicIds, expectedSubtopic
   }
 
   const tracks = sections.get(1).filter(({text}) => text.startsWith('TRL-')).map(line => {
-    const [, id, title, description] = requireMatch(line, /^(TRL-(?:[A-Z]+-)?0\d) \((.+?)\):\s*(.+)$/, 'Trilha');
+    const [, id, title, description] = requireMatch(line, /^(TRL-(?:[A-Z]+-)?[A-Z0-9]+) \((.+?)\):\s*(.+)$/, 'Trilha');
     return {id, title, description, sourceLine: line.number};
   });
   const requirements = sections.get(1).filter(({text}) => /^RN?F-/.test(text)).map(line => {
     const [, id, title, description] = requireMatch(line, /^(RN?F-\d\d) \((.+?)\):\s*(.+)$/, 'Requisito');
     return {id, title, description, sourceLine: line.number};
   });
-  assertSequence(tracks.map(t => t.id), Array.from({length: format.trackCount ?? 5}, (_, i) => format.trackPrefix + '0' + i), 'Trilhas');
+  assertSequence(tracks.map(t => t.id), format.trackIds ?? Array.from({length: format.trackCount ?? 5}, (_, i) => format.trackPrefix + '0' + i), 'Trilhas');
   assertSequence(requirements.map(r => r.id), [
     ...Array.from({length: 7}, (_, i) => 'RF-0' + (i + 1)), 'RNF-01', 'RNF-02', 'RNF-03'
   ], 'Requisitos');

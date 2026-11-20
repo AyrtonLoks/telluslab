@@ -1,5 +1,6 @@
 export const DAY_MS = 86_400_000;
 export const FSRS_VERSION = 'FSRS-5';
+export const PAIRED_CARD_KINDS = Object.freeze(['recognition', 'production']);
 export const DEFAULT_WEIGHTS = Object.freeze([
   0.40255, 1.18385, 3.173, 15.69105, 7.1949, 0.5345, 1.4604, 0.0046,
   1.54575, 0.1192, 1.01925, 1.9395, 0.11, 0.29605, 2.2698,
@@ -22,6 +23,13 @@ export function retrievability(elapsedDays, stability) {
     throw new Error('Estado de memória inválido');
   }
   return (1 + FACTOR * elapsedDays / stability) ** -0.5;
+}
+
+export function newReviewCard({id, topicId, sourceId, kind, frontLatex, backLatex}, now) {
+  return {id, topicId, sourceId, kind, frontLatex, backLatex,
+    scheduler:FSRS_VERSION, createdAt:now, lastReview:null,
+    dueAt:new Date(timestamp(now) + DAY_MS).toISOString(),
+    stability:null, difficulty:null, repetitions:0, lapses:0};
 }
 
 export function rateCard(card, grade, now, retention = 0.90) {

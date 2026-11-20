@@ -3,9 +3,11 @@ import { timestamp } from './fsrs.mjs';
 
 export const DIFFICULTIES = Object.freeze(['Lacuna em Pré-requisito', 'Heurística Inicial',
   'Erro Algébrico', 'Falha de Rigor/Quantificadores', 'Instabilidade/Bug']);
+
 export const CROSS_PREREQUISITE_GAP = 'DIF-PROG-01';
 export const isCrossPrerequisiteGap = difficulty =>
-  [CROSS_PREREQUISITE_GAP, 'DIF-ECON-01', 'DIF-PHYS-01', 'DIF-PHYS-04', 'DIF-ENG-01', 'DIF-HUM-01'].includes(difficulty);
+  [CROSS_PREREQUISITE_GAP, 'DIF-ECON-01', 'DIF-PHYS-01', 'DIF-PHYS-04', 'DIF-ENG-01', 'DIF-HUM-01',
+    'DIF-LANG-01', 'DIF-LIT-01'].includes(difficulty);
 
 export function diagnose(dag, state, attempt) {
   const agenda = {...state.agenda};
@@ -14,7 +16,7 @@ export function diagnose(dag, state, attempt) {
     const repeated = previous.some(old => old.id !== attempt.id && old.difficulty === attempt.difficulty &&
       old.topicIds.includes(topicId));
     const crossGap = isCrossPrerequisiteGap(attempt.difficulty);
-    if (attempt.difficulty !== DIFFICULTIES[0] && !crossGap && !repeated) continue;
+    if (attempt.difficulty !== DIFFICULTIES[0] && attempt.difficulty !== 'DIF-LANG-03' && !crossGap && !repeated) continue;
     const cross = crossGap ? dag.cross?.ancestors(topicId) ?? [] : [];
     for (const ancestorId of [...ancestors(dag, [topicId]), ...cross]) {
       const id = 'micro:' + topicId + ':' + ancestorId;

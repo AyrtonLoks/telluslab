@@ -1,5 +1,5 @@
 import { mastered } from './dag.mjs';
-import { DAY_MS, FSRS_VERSION, rateCard, timestamp } from './fsrs.mjs';
+import { newReviewCard, rateCard, timestamp } from './fsrs.mjs';
 
 const active = new Set(['S1', 'S2', 'S3']);
 
@@ -85,11 +85,8 @@ function starterCards(topic, proof, completed, now, renderCard = cardContent) {
   for (const source of obligations) {
     for (const kind of ['statement', 'counterexample', 'proofIdea']) {
       const id = source.id + ':' + kind;
-      cards[id] = {id, topicId: topic.id, sourceId: source.id, kind,
-        ...renderCard(source.description, kind, source.evidence),
-        scheduler: FSRS_VERSION, createdAt: now, lastReview: null,
-        dueAt: new Date(timestamp(now) + DAY_MS).toISOString(),
-        stability: null, difficulty: null, repetitions: 0, lapses: 0};
+      cards[id] = newReviewCard({id, topicId: topic.id, sourceId: source.id, kind,
+        ...renderCard(source.description, kind, source.evidence, {topic, source})}, now);
     }
   }
   return cards;
@@ -136,6 +133,7 @@ export function applyStudyEvent(dag, original, topicId, action, now) {
           action.approved !== true || (criterion.kind === 'mandatory' && action.withoutConsultation !== true)) {
         throw new Error('Evidência de DoD insuficiente');
       }
+      dag.validateCriterion?.(criterion, action.evidence);
       const validation = {criterionId: criterion.id, approved: true, evidence: action.evidence, at: now,
         withoutConsultation: criterion.kind === 'mandatory' ? true : null};
       next = {...current, criteria: {...current.criteria, [criterion.id]: validation}};

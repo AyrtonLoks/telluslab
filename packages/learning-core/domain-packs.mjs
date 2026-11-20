@@ -7,6 +7,8 @@ export const ECON_DOMAIN = 'DOM-ECON';
 export const PHYS_DOMAIN = 'DOM-PHYS';
 export const ENG_DOMAIN = 'DOM-ENG';
 export const HUM_DOMAIN = 'DOM-HUM';
+export const LANG_DOMAIN = 'DOM-LANG';
+export const LIT_DOMAIN = 'DOM-LIT';
 export const CROSS_MODES = Object.freeze(['flexible', 'strict']);
 const domainPattern = /^DOM-[A-Z][A-Z0-9-]*$/;
 
@@ -65,7 +67,10 @@ export function createDomainPacks(packs) {
       const item = progress(ref);
       return !mastered(item) || item.state === 'S6';
     };
-    return {...pack.dag, difficulties:pack.catalog.difficulties, cardContent:pack.profile?.cardContent, cross: {
+    return {...pack.dag, difficulties:pack.catalog.difficulties, cardContent:pack.profile?.cardContent,
+      validateCriterion:pack.profile?.validateCriterion,
+      validateFeedback:pack.profile?.validateSnapshotFeedback,
+      preserveDraftWhitespace:pack.profile?.preserveDraftWhitespace, cross: {
       mode,
       reference: ref => references.get(ref),
       progress,

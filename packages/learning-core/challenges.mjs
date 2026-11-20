@@ -64,7 +64,7 @@ export function submitAttempt(dag, state, {id, challengeId, draft, draftFormat, 
   const elapsedMs = timer.elapsedMs + (timer.runningSince ? end - timestamp(timer.runningSince) : 0);
   if (!(elapsedMs > 0)) throw new Error('Tempo cronometrado deve ser positivo');
   const attempt = {id, challengeId, topicIds: [...challenge.topicIds], startedAt: timer.startedAt,
-    submittedAt: now, elapsedMs, draft: draft.trim(), draftFormat, difficulty};
+    submittedAt: now, elapsedMs, draft: dag.preserveDraftWhitespace ? draft : draft.trim(), draftFormat, difficulty};
   const timers = {...state.timers};
   delete timers[challengeId];
   return {attempt, state: {...state, timers, agenda: diagnose(dag, state, attempt),
