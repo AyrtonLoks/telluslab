@@ -39,3 +39,5 @@ dialog{color:var(--ink);border:1px solid var(--line);border-radius:18px;width:mi
 [data-text-domain="languages"] rt { font-size:.62em }
 .verse, .math-copy pre.verse { white-space:pre-wrap; overflow-wrap:anywhere }
 .reading-excerpt { white-space:pre-wrap; overflow-wrap:anywhere; margin:0; border-inline-start:3px solid var(--line); padding-inline-start:.85rem }
+
+.gap-radar { display: block; width: min(100%, 320px); margin-inline: auto; }

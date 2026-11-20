@@ -1,5 +1,5 @@
 import { timestamp } from './fsrs.mjs';
-import { DIFFICULTIES, diagnose } from './agenda.mjs';
+import { validDifficulty, diagnose } from './agenda.mjs';
 import { challengeBrief } from './sessions.mjs';
 import { advancementGuard } from './fsm.mjs';
 
@@ -54,7 +54,7 @@ export function submitAttempt(dag, state, {id, challengeId, draft, draftFormat, 
   const timer = state.timers[challengeId];
   if (!id || state.attempts[id] || !challenge || !timer || now < timer.updatedAt || !hasText(draft) ||
       !['latex', 'code'].includes(draftFormat) ||
-      !(dag.difficulties ? Object.hasOwn(dag.difficulties, difficulty) : DIFFICULTIES.includes(difficulty))) {
+      !validDifficulty(dag.difficulties, difficulty)) {
     throw new Error('Tentativa exige cronômetro, rascunho em LaTeX/código e dificuldade');
   }
   if (dag.cross && challenge.topicIds.some(topicId =>

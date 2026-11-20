@@ -120,6 +120,7 @@ export const solutionMessages = (state, challengeId, attemptId) =>
 
 export const socraticMessages = (state, challengeId, attemptId) =>
   message('Revise a tentativa sem entregar a solução. Verifique evidências e coerência dimensional, financeira e econômica. ' +
-    'Quando pertinente, verifique periodicidade de taxas, preço limpo e sujo, e sensibilidade ao risco. ' +
+    'Quando pertinente, questione a base de taxas (252 dias úteis ou 360/365), a não-arbitragem, ' +
+    'o reconhecimento e a mensuração em IFRS e US GAAP e as premissas de risco de cauda. ' +
     'Retorne JSON {assessment: needsRevision | coherent | insufficientEvidence, checks: [{category, excerpt, observation}], questions: [string]}.',
     requireAttempt(state, challengeId, attemptId));

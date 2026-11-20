@@ -1,4 +1,4 @@
-import { ancestors, createDag, mastered } from './dag.mjs';
+import { ancestors, createDag, mastered, pendingPath, targetsFor } from './dag.mjs';
 import { refreshLearning } from './fsm.mjs';
 
 export const MATH_DOMAIN = 'DOM-MATH';
@@ -80,4 +80,25 @@ export function createDomainPacks(packs) {
     }};
   }
   return {domains, dag, references, scope};
+}
+
+export function interdisciplinaryPath(packs, states, domainId, target, includeCross) {
+  const pack = packs.domains.get(domainId);
+  if (!pack) throw new Error('Domínio curricular desconhecido: ' + domainId);
+  const prefix = domainId + ':';
+  const localId = target.kind === 'topic' && target.id.startsWith(prefix) ? target.id.slice(prefix.length) :
+    target.kind === 'book' && domainId === MATH_DOMAIN ? target.id.replace(/^BIB-MATH-/, 'BIB-') : target.id;
+  const localTarget = {...target, id:localId};
+  if (!includeCross) {
+    const pending = pendingPath(pack.catalog, pack.dag, states[domainId].progress, localTarget);
+    return pending.order.map(id => domainId + ':' + id);
+  }
+  const targets = targetsFor(pack.catalog, localTarget);
+  const refs = targets.map(id => qualify(domainId, id));
+  const pending = new Set([...ancestors(packs.dag, refs), ...refs].filter(ref => {
+    const item = packs.references.get(ref);
+    const progress = states[item.domainId]?.progress[item.topicId];
+    return !mastered(progress) || progress.state === 'S6';
+  }));
+  return packs.dag.order.filter(ref => pending.has(ref)).map(ref => ref.replace('::', ':'));
 }

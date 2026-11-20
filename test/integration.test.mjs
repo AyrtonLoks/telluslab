@@ -89,7 +89,8 @@ test('KaTeX é local e todos os recursos do cache offline existem',async()=>{
   const assets=[];
   const listeners={};
   const sw=readFileSync(new URL('sw.js',base),'utf8');
-  runInNewContext(sw,{self:{addEventListener:(name,fn)=>listeners[name]=fn,skipWaiting:()=>{}},
+  runInNewContext(sw,{URL,location:new URL('https://lab.test/sw.js'),
+    self:{registration:{scope:'https://lab.test/'},addEventListener:(name,fn)=>listeners[name]=fn,skipWaiting:()=>{}},
     caches:{open:async()=>({addAll:async urls=>assets.push(...urls)})}});
   let installed;
   listeners.install({waitUntil:promise=>{installed=promise;}});

@@ -135,13 +135,22 @@ export function mapPage(ctx) {
     '<form id="target-form" class="card pad filters"><label class="field"><span>Tipo de alvo</span><select class="control" name="kind" id="target-kind"><option value="topic">Macrotema</option><option value="book" '+(ctx.targetKind==='book'?'selected':'')+'>Obra</option></select></label>'+
     '<label class="field" style="flex:1"><span>Alvo</span><select class="control" name="id" id="target-id">'+
     (ctx.targetKind==='book'?ctx.catalog.books:ctx.catalog.topics).map(x=>'<option value="'+x.id+'">'+x.id+' · '+esc(x.title)+'</option>').join('')+'</select></label>'+
+    '<label class="small"><input type="checkbox" name="cross" '+(ctx.includeCrossTarget?'checked':'')+'> Incluir outros domínios</label>'+
     '<button class="btn primary" type="submit">'+icon('target','sm')+' Calcular caminho</button></form>'+
     (t?'<div class="card pad area"><div class="row between wrap"><div><h2>Caminho de '+esc(ctx.targetRef?.id)+'</h2><p class="small">'+t.prerequisites.length+' pré-requisitos pendentes · '+t.pendingTargets.length+' macrotemas-alvo pendentes</p></div>'+
     badge(t.order.length?'Ordem de estudo':'Objetivo já coberto','s4')+'</div><div class="row wrap meta">'+t.order.map(id=>'<a class="tag" href="#trilhas/'+id+'" title="'+esc(titleFor(ctx.dag,id))+'">'+id+'</a>').join('')+'</div></div>':'')+
-    (t?.crossOrder?.length?'<section class="card pad area"><h2>Pré-requisitos interdisciplinares pendentes</h2><ol class="compact-list">'+
-      t.crossOrder.map(ref=>'<li>'+crossLink(ctx,ref)+'</li>').join('')+'</ol></section>':'')+
+    (ctx.globalPath?'<section class="card pad area"><h2>Caminho interdisciplinar em ordem topológica</h2>'+
+      (ctx.globalPath.length?'<ol class="compact-list">'+ctx.globalPath.map(({domainId,topicId,title})=>
+        '<li><a href="'+esc(ctx.topicHref(domainId,topicId))+'">'+esc(domainId+':'+topicId+' · '+title)+'</a></li>').join('')+'</ol>':
+        '<p class="small">Objetivo já coberto.</p>')+'</section>':'')+
     '<div class="area" style="margin-bottom:16px">'+graph(ctx)+'</div>'+
-    (selected?topicPanel(ctx,selected):'');
+    (selected?topicPanel(ctx,selected)+pediaLinks(ctx,selected.id):'');
+}
+
+function pediaLinks(ctx,id) {
+  const links=ctx.explorePedia?.(id)??[];
+  return links.length?'<section class="card pad area"><h2>Explorar no TellusPedia</h2><ul class="compact-list">'+
+    links.map(link=>'<li><a href="'+esc(link.href)+'">'+esc(link.title)+'</a></li>').join('')+'</ul></section>':'';
 }
 
 export function libraryPage(ctx,bookId) {

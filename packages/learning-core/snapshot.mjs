@@ -1,7 +1,7 @@
 import { createDag, mastered } from './dag.mjs';
 import { createLearningState } from './fsm.mjs';
 import { FSRS_VERSION, PAIRED_CARD_KINDS, timestamp } from './fsrs.mjs';
-import { DIFFICULTIES, isCrossPrerequisiteGap } from './agenda.mjs';
+import { validDifficulty, isCrossPrerequisiteGap } from './agenda.mjs';
 import { LANG_DOMAIN } from './domain-packs.mjs';
 
 export const SNAPSHOT_VERSION = 1;
@@ -140,8 +140,7 @@ export function importSnapshot(json, catalog, dag = createDag(catalog.topics)) {
     const challenge = s.challenges[a?.challengeId];
     require(a?.id === id && challenge && text(a.draft) && integer(a.elapsedMs) && a.elapsedMs > 0 &&
       Array.isArray(a.topicIds) && a.topicIds.join('|') === challenge.topicIds.join('|') &&
-      ['latex','code'].includes(a.draftFormat) && (catalog.difficulties ? Object.hasOwn(catalog.difficulties, a.difficulty) :
-        DIFFICULTIES.includes(a.difficulty)) &&
+      ['latex','code'].includes(a.draftFormat) && validDifficulty(catalog.difficulties, a.difficulty) &&
       a.elapsedMs <= timestamp(a.submittedAt) - timestamp(a.startedAt), 'tentativa ' + id);
   }
   for (const [id, item] of Object.entries(s.agenda)) {

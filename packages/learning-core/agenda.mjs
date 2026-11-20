@@ -3,6 +3,15 @@ import { timestamp } from './fsrs.mjs';
 
 export const DIFFICULTIES = Object.freeze(['Lacuna em Pré-requisito', 'Heurística Inicial',
   'Erro Algébrico', 'Falha de Rigor/Quantificadores', 'Instabilidade/Bug']);
+export const MATH_DIFFICULTIES = Object.freeze(Object.fromEntries([...DIFFICULTIES, 'Validação de casos-limite']
+  .map((label,index) => ['DIF-MATH-0' + (index + 1),label])));
+export function canonicalDiagnosis(difficulty) {
+  const legacy = DIFFICULTIES.indexOf(difficulty);
+  return legacy === -1 ? difficulty : 'DIF-MATH-0' + (legacy + 1);
+}
+export const validDifficulty = (difficulties, difficulty) => difficulties
+  ? Object.hasOwn(difficulties, difficulty)
+  : DIFFICULTIES.includes(difficulty) || Object.hasOwn(MATH_DIFFICULTIES, difficulty);
 
 export const CROSS_PREREQUISITE_GAP = 'DIF-PROG-01';
 export const isCrossPrerequisiteGap = difficulty =>
@@ -13,10 +22,10 @@ export function diagnose(dag, state, attempt) {
   const agenda = {...state.agenda};
   const previous = Object.values(state.attempts);
   for (const topicId of attempt.topicIds) {
-    const repeated = previous.some(old => old.id !== attempt.id && old.difficulty === attempt.difficulty &&
+    const repeated = previous.some(old => old.id !== attempt.id && canonicalDiagnosis(old.difficulty) === canonicalDiagnosis(attempt.difficulty) &&
       old.topicIds.includes(topicId));
     const crossGap = isCrossPrerequisiteGap(attempt.difficulty);
-    if (attempt.difficulty !== DIFFICULTIES[0] && attempt.difficulty !== 'DIF-LANG-03' && !crossGap && !repeated) continue;
+    if (attempt.difficulty !== DIFFICULTIES[0] && attempt.difficulty !== 'DIF-MATH-01' && attempt.difficulty !== 'DIF-LANG-03' && !crossGap && !repeated) continue;
     const cross = crossGap ? dag.cross?.ancestors(topicId) ?? [] : [];
     for (const ancestorId of [...ancestors(dag, [topicId]), ...cross]) {
       const id = 'micro:' + topicId + ':' + ancestorId;
