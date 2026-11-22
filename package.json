@@ -11,7 +11,9 @@
     "start": "npm run build && node serve.mjs",
     "test": "npm run build && node --test",
     "verify:git": "node scripts/verify-git-index.mjs",
-    "lint": "node scripts/lint.mjs && npm run backlog:lint -- --file docs/BACKLOG.md",
+    "lint": "node scripts/lint.mjs && npm run backlog:lint -- --file docs/BACKLOG.md && npm run content:lint",
+    "content:lint": "node scripts/content-lint.mjs",
+    "content:coverage": "node scripts/content-lint.mjs --coverage",
     "backlog:lint": "node scripts/backlog.mjs lint",
     "backlog:next": "node scripts/backlog.mjs next",
     "typecheck": "tsc --noEmit --strict --module nodenext --target es2022 packages/tellus-bridge/index.d.mts packages/content-schema/index.d.mts",
@@ -26,6 +28,8 @@
     "mermaid": "11.17.2"
   },
   "devDependencies": {
+    "jsdom": "26.1.0",
+    "jsonc-parser": "3.3.1",
     "typescript": "5.9.3"
   }
 }

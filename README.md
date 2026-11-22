@@ -71,6 +71,17 @@ Execute a auditoria Git após `git add`. Ela verifica os blobs do índice, inclu
 - [Instruções para agentes (AGENTS.md)](AGENTS.md): comandos, invariantes, protocolo e regras de commit
 - [Backlog](docs/BACKLOG.md): tarefas, grupos de conflito e fluxo de trabalho
 
+### Validar Content Packs
+
+Execute `npm run content:lint` para verificar o conteúdo em `content/`. O comando também roda em `npm run lint` e na CI. Cada diagnóstico informa arquivo, linha e motivo. Conteúdo com revisão pendente gera aviso, assim como gabaritos que ainda aguardam um verificador automático.
+
+Use `npm run content:coverage` para contar, por domínio, os macrotemas com lições, exercícios ou cartões. Para experimentar os dois comandos com os exemplos do ADR-003:
+
+```bash
+npm run content:lint -- --root test/fixtures/content
+npm run content:coverage -- --root test/fixtures/content
+```
+
 ## Documentação
 
 - [Contrato com TellusPedia](docs/telluspedia-integration.md)

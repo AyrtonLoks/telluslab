@@ -2,16 +2,7 @@ import { mkdir, readFile, readdir, writeFile } from 'node:fs/promises';
 import { createHash } from 'node:crypto';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { mathematicsSeed } from '../packages/curriculum-mathematics/seed.mjs';
-import { programmingSeed } from '../packages/curriculum-programming/seed.mjs';
-import { economicsSeed } from '../domains/economics-finance/seed.mjs';
-import { physicsSeed } from '../domains/physics/seed.mjs';
-import { engineeringSeed } from '../domains/engineering/seed.mjs';
-import { humanitiesSeed } from '../domains/humanities/seed.mjs';
-import { languageSeed } from '../domains/languages/seed.mjs';
-import { literatureSeed } from '../domains/literature/seed.mjs';
-import { MATH_DOMAIN } from '../packages/learning-core/domain-packs.mjs';
-
+import { loadCatalogs } from './catalogs.mjs';
 import { bridgeCatalog } from './bridge-catalog.mjs';
 import { contentFiles } from '../packages/content-schema/index.mjs';
 
@@ -78,17 +69,7 @@ for (const [path, source] of [
   ['vendor/highlight/LICENSE.txt','@highlightjs/cdn-assets/LICENSE']
 ]) await emit(path, await read('node_modules/' + source));
 
-const math = mathematicsSeed();
-const programming = programmingSeed(math);
-const physics = physicsSeed(math, programming);
-const economics = economicsSeed(math, programming);
-const engineering = engineeringSeed(math, physics, programming);
-const humanities = humanitiesSeed(math, economics, programming, physics);
-const dependencies = [math, programming, economics, physics, engineering, humanities]
-  .map(catalog => ({id:catalog.domainId ?? MATH_DOMAIN, catalog}));
-const languages = languageSeed(dependencies);
-const literature = literatureSeed([...dependencies, {id:languages.domainId, catalog:languages}]);
-const catalogs = [math, programming, economics, physics, engineering, humanities, languages, literature];
+const catalogs = loadCatalogs();
 const {registry, manifest} = bridgeCatalog(catalogs);
 for (const [index,domain] of registry.domains.entries()) {
   const contents = JSON.stringify(catalogs[index], null, 2) + '\n';
