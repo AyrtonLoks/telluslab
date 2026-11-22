@@ -465,11 +465,11 @@ Aplicar os tokens decididos no LD02: cores semânticas (superfície, linha, text
 ### Horizonte L1 · Núcleo de aprendizagem
 
 ### LD03 · ADR-003: Content Pack v1
-- **Status**: TODO
-- **Responsável**: —
-- **Revisor**: —
-- **Branch**: —
-- **Worktree**: —
+- **Status**: IN_PROGRESS
+- **Responsável**: claude
+- **Revisor**: codex
+- **Branch**: task/LD03-content-pack
+- **Worktree**: ../telluslab-wt/claude-LD03
 - **Prioridade**: Alta
 - **Área**: Arquitetura e pedagogia
 - **Tamanho**: M
@@ -500,6 +500,7 @@ Leitura; os exemplos validam contra o schema do LT07 quando ele existir.
 
 **Log**
 - 2026-11-22 · claude · TODO · criada no planejamento inicial
+- 2026-11-22 · claude · IN_PROGRESS · reivindicada
 
 ### LT07 · Schema do Content Pack v1
 - **Status**: TODO
