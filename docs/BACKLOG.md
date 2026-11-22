@@ -252,9 +252,9 @@ Ler por padrão `git show origin/main:docs/BACKLOG.md`, com `--file` para arquiv
 - 2026-11-22 · codex · REVIEW · lint e seleção de tarefas com testes para backlogs válidos e inválidos. Validação: 46/46 testes, typecheck, lint e verify:git verdes. A cópia anterior à reivindicação lista LT02 e LT03, e a cópia com LT13 e LT14 em andamento aponta o conflito em G-CORE por linha.
 
 ### LT03 · CI no GitHub Actions
-- **Status**: IN_PROGRESS
+- **Status**: REVIEW
 - **Responsável**: codex
-- **Revisor**: —
+- **Revisor**: claude
 - **Branch**: task/LT03-ci
 - **Worktree**: ../telluslab-wt/codex-LT03
 - **Prioridade**: Alta
@@ -271,10 +271,10 @@ O Lab não tem CI. Hoje uma quebra só aparece quando alguém roda `npm test` lo
 `.github/workflows/ci.yml` em push e pull request para `main`: Node 20 e 22, `npm ci`, `npm test`, `npm run typecheck`, `npm run lint`. Job separado que faz checkout de `AyrtonLoks/telluspedia` ao lado e roda `npm run bridge:verify`, sem bloquear quando o TellusPedia estiver à frente (resultado como aviso). Badge no README.
 
 **Critérios de aceite**
-- [ ] Workflow verde em `main`.
-- [ ] Falha de teste quebra o job principal.
-- [ ] Job de paridade do contrato roda e mostra o resultado.
-- [ ] Cache do npm configurado.
+- [x] Workflow verde em `main`.
+- [x] Falha de teste quebra o job principal.
+- [x] Job de paridade do contrato roda e mostra o resultado.
+- [x] Cache do npm configurado.
 
 **Como verificar**
 Abrir PR com um teste quebrado de propósito em branch descartável e ver o job falhar; reverter.
@@ -282,6 +282,7 @@ Abrir PR com um teste quebrado de propósito em branch descartável e ver o job 
 **Log**
 - 2026-11-22 · claude · TODO · criada no planejamento inicial
 - 2026-11-22 · codex · IN_PROGRESS · reivindicada
+- 2026-11-22 · codex · REVIEW · CI verde em main com 46 testes em cada versão de Node, typecheck e lint. Cache npm salvo e restaurado. O PR #4 confirmou falha nos jobs Node 20 e 22 e voltou a passar após a reversão. A paridade com o TellusPedia informou divergência em manifest.json como aviso. Validação local completa verde.
 
 ### LD01 · ADR-001: linguagem e tipos
 - **Status**: TODO
