@@ -79,7 +79,7 @@ Validação completa verde · critérios marcados · testes novos para comportam
 
 | Prefixo | Uso | Próximo livre |
 |---|---|---|
-| `LT##` | Engenharia, infraestrutura, motor | LT17 |
+| `LT##` | Engenharia, infraestrutura, motor | LT18 |
 | `LD##` | Design, produto, UX e ADRs | LD13 |
 | `LC##` | Conteúdo pedagógico (lições, exercícios, cartões) | LC09 |
 
@@ -285,6 +285,36 @@ Abrir PR com um teste quebrado de propósito em branch descartável e ver o job 
 - 2026-11-22 · codex · IN_PROGRESS · reivindicada
 - 2026-11-22 · codex · REVIEW · CI verde em main com 46 testes em cada versão de Node, typecheck e lint. Cache npm salvo e restaurado. O PR #4 confirmou falha nos jobs Node 20 e 22 e voltou a passar após a reversão. A paridade com o TellusPedia informou divergência em manifest.json como aviso. Validação local completa verde.
 - 2026-11-22 · ayrton · DONE · entrega aprovada no chat e registrada pelo Codex.
+
+### LT17 · Reconciliar o manifesto do TellusBridge com o espelho do TellusPedia
+- **Status**: TODO
+- **Responsável**: —
+- **Revisor**: —
+- **Branch**: —
+- **Worktree**: —
+- **Prioridade**: Alta
+- **Área**: Contrato
+- **Tamanho**: M
+- **Depende de**: —
+- **Grupos**: G-BRIDGE, G-PEDIA
+- **Afinidade sugerida**: Claude
+
+**Contexto**
+`npm run bridge:verify` falha em `origin/main` com "TellusBridge divergente: manifest.json". O espelho em `apps/web/src/lib/tellus-bridge/contract/manifest.json` do TellusPedia tem 73 vínculos; o `scripts/bridge-catalog.mjs` do Lab gera 31. Faltam no gerador, por exemplo, `dossier:fundamentos-da-matematica`, `dossier:mecanica-eletromagnetismo-quantica`, `figure:isaac-newton` e `figure:albert-einstein`, além de nós e obras a mais em vínculos existentes. Tudo indica que a ampliação de cobertura da D26 do TellusPedia foi feita no espelho e não no gerador, o que viola o invariante 6. Encontrado durante a LT07; o job de paridade do CI (LT03) só emite aviso, por isso não bloqueou.
+
+**O que fazer**
+Levar para `scripts/bridge-catalog.mjs` os vínculos que hoje só existem no espelho, conferindo cada um contra o registro (nós e obras existentes), até `bridge:verify` passar sem editar o espelho. Se algum vínculo do espelho não tiver respaldo no catálogo, registrar no Log e decidir com o Ayrton. Se a reconciliação exigir mudança no TellusPedia, abrir a tarefa espelho no backlog de lá.
+
+**Critérios de aceite**
+- [ ] `bridge:verify` passa contra `origin/master` do TellusPedia sem edição manual do espelho.
+- [ ] Cobertura do manifesto gerado igual ou maior que a do espelho atual (≥ 85% dos 299 nós, como na D26).
+- [ ] Teste no Lab que falha se o manifesto gerado perder vínculos já publicados.
+
+**Como verificar**
+`TELLUSPEDIA_REPO=<checkout do TellusPedia> npm run bridge:verify`; `npm test`.
+
+**Log**
+- 2026-11-22 · claude · TODO · criada durante a LT07 ao rodar `bridge:verify`: espelho com 73 vínculos, gerador com 31
 
 ### LD01 · ADR-001: linguagem e tipos
 - **Status**: TODO
@@ -510,7 +540,7 @@ Leitura; os exemplos validam contra o schema do LT07 quando ele existir.
 - 2026-11-22 · ayrton · REVIEW · DECISÃO: opção A aceita, com as quatro recomendações da seção 9 (subconjunto de YAML com parser próprio; `schedule: "lesson"` permitido; `review: pending` sem evidência; `CC-BY-SA-4.0` provisória até o LD05). Registrado pelo claude a partir da aprovação no chat; ADR atualizado para "aceito"
 
 ### LT07 · Schema do Content Pack v1
-- **Status**: IN_PROGRESS
+- **Status**: REVIEW
 - **Responsável**: claude
 - **Revisor**: codex
 - **Branch**: task/LT07-content-schema
@@ -529,9 +559,9 @@ Contrato executável do LD03, no mesmo padrão do `packages/tellus-bridge` (JSON
 Criar `packages/content-schema/` com `lesson.schema.json`, `exercise.schema.json`, `card.schema.json`, `source.schema.json`, tipos `.d.mts`, função `validateContentPack(dir)` e carregador que monta o pacote de conteúdo no build (`dist/content/<domínio>.json`, um arquivo por domínio, carregado sob demanda).
 
 **Critérios de aceite**
-- [ ] Os exemplos do ADR-003 validam; variações inválidas falham com mensagem legível.
-- [ ] Build gera um JSON por domínio e não aumenta o carregamento inicial.
-- [ ] Testes em `test/content-schema.test.mjs`.
+- [x] Os exemplos do ADR-003 validam; variações inválidas falham com mensagem legível.
+- [x] Build gera um JSON por domínio e não aumenta o carregamento inicial.
+- [x] Testes em `test/content-schema.test.mjs`.
 
 **Como verificar**
 `npm test`; inspecionar `dist/content/`.
@@ -539,6 +569,7 @@ Criar `packages/content-schema/` com `lesson.schema.json`, `exercise.schema.json
 **Log**
 - 2026-11-22 · claude · TODO · criada no planejamento inicial
 - 2026-11-22 · claude · IN_PROGRESS · reivindicada. Toca `scripts/build.mjs` só para chamar o carregador do pacote (uma linha), fora do escopo do LT03
+- 2026-11-22 · claude · REVIEW · `packages/content-schema/`: 6 schemas JSON 2020-12 (comum, pack, lição, exercícios com os 8 tipos, cartões, registro de fontes), validador próprio sem dependência que devolve todos os erros com arquivo, linha (front matter, blocos, JSON) e caminho (`exercises[0].answer.correct`), parser do subconjunto de YAML decidido no ADR-003, leitura dos blocos `:::` e checagens de coerência (IDs × diretório, nós do pack, lacunas, opções, permutação, variáveis `{{}}`, gramática de `derived`, `DIF-*` do domínio, `FON-*` no registro, verificação rápida e figura existentes). Tipos em `types.d.mts`/`index.d.mts`, incluídos no `npm run typecheck`; conferido que os dados das fixtures satisfazem os tipos e que um tipo inválido falha. `validateContentPack(dir)`, `loadContentPacks(root)` e `contentFiles(root)`; o build grava `dist/content/index.json` (80 bytes hoje, sem conteúdo) e um `dist/content/<slug>.json` por domínio com conteúdo, precacheados pelo service worker para uso offline e fora do `index.html`. Fixtures em `test/fixtures/content/` geradas dos exemplos do ADR (5 domínios, 8 tipos, lição, cartão simples e par); o teste também valida os blocos direto do ADR para os dois não divergirem. 11 testes novos com 40+ variações inválidas. Validação: 57/57, typecheck, lint e verify:git verdes. Tocou `scripts/build.mjs` (2 linhas) e `package.json` (typecheck), ambos `G-BUILD`, sem tarefa ativa no grupo. `bridge:verify` falha também em `origin/main` (manifesto idêntico antes e depois): aberta a LT17
 
 ### LT08 · `content:lint`
 - **Status**: TODO
