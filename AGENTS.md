@@ -21,7 +21,9 @@ Todos os scripts de `package.json`:
 | `npm start` | Build e servidor em `http://127.0.0.1:4175`, com 4183 como alternativa (`serve.mjs`) |
 | `npm test` | Build e `node --test` sobre `test/` |
 | `npm run typecheck` | `tsc` estrito sobre os tipos do TellusBridge (`packages/tellus-bridge/index.d.mts`) |
-| `npm run lint` | `node --check` em todos os `.mjs`/`.js` de `apps/web/src`, `packages`, `domains`, `scripts`, `test` e em `serve.mjs` |
+| `npm run lint` | Verifica a sintaxe dos arquivos JavaScript e valida a cópia local do backlog |
+| `npm run backlog:lint` | Valida `origin/main:docs/BACKLOG.md`; use `-- --file <caminho>` para uma cópia local |
+| `npm run backlog:next -- --agent <agente>` | Lista as tarefas disponíveis e explica impedimentos; aceita `--file <caminho>` junto com `--agent` |
 | `npm run verify:git` | Audita os blobs staged: só texto, sem binários, `dist/`, `.env`, dados locais ou fontes KaTeX |
 | `npm run bridge:sync` | Build e escrita do espelho do contrato no checkout do TellusPedia |
 | `npm run bridge:verify` | Build e conferência byte a byte do espelho |
@@ -39,7 +41,7 @@ Validação obrigatória antes de mover uma tarefa para `REVIEW`:
 npm test && npm run typecheck && npm run lint && npm run verify:git
 ```
 
-Rode `verify:git` depois do `git add`. Comandos previstos no backlog que ainda não existem: `backlog:lint` e `backlog:next` (LT02), `content:lint` (LT08) e `test:e2e` (LT05). Quando entrarem, passam a fazer parte da validação.
+Rode `verify:git` depois do `git add`. Os comandos previstos `content:lint` (LT08) e `test:e2e` (LT05) passam a fazer parte da validação quando forem implementados.
 
 Abrir um domínio direto: `/lab?domain=physics&topic=7.3`.
 
@@ -80,7 +82,7 @@ Valem para todas as tarefas. Quebrar um deles é motivo de `REVIEW-AJUSTE`, mesm
 O fluxo completo, a Definição de Pronto e os grupos de conflito estão na seção 1 do [backlog](docs/BACKLOG.md).
 
 1. `git fetch origin` e ler `git show origin/main:docs/BACKLOG.md`.
-2. Escolher uma tarefa `TODO` com as dependências em `REVIEW` ou `DONE` e sem nenhuma tarefa `IN_PROGRESS`/`BLOCKED` num grupo de conflito em comum. Depois de LT02, use `npm run backlog:next -- --agent <claude|codex|antigravity>`.
+2. Rodar `npm run backlog:next -- --agent <claude|codex|antigravity>` e escolher uma tarefa disponível.
 3. Trabalhar num worktree próprio: `git worktree add ../telluslab-wt/<agente>-<id> -b task/<id>-<slug> origin/main`. O checkout principal é do Ayrton.
 4. Reivindicar antes de codar: Responsável, Branch, Worktree, `IN_PROGRESS` e linha no Log; commit `chore(backlog): <id> IN_PROGRESS (<agente>)` e push para `origin/main`. Push rejeitado: rebase e releia; se alguém pegou a tarefa ou um grupo em comum, desista.
 5. Escopo fechado. Achou outro problema: crie uma tarefa nova com o próximo ID livre (seção 1.5 do backlog).
