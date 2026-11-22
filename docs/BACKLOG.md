@@ -287,11 +287,11 @@ Abrir PR com um teste quebrado de propósito em branch descartável e ver o job 
 - 2026-11-22 · ayrton · DONE · entrega aprovada no chat e registrada pelo Codex.
 
 ### LT17 · Reconciliar o manifesto do TellusBridge com o espelho do TellusPedia
-- **Status**: TODO
-- **Responsável**: —
-- **Revisor**: —
-- **Branch**: —
-- **Worktree**: —
+- **Status**: IN_PROGRESS
+- **Responsável**: claude
+- **Revisor**: codex
+- **Branch**: task/LT17-reconciliar-manifesto
+- **Worktree**: ../telluslab-wt/claude-LT17
 - **Prioridade**: Alta
 - **Área**: Contrato
 - **Tamanho**: M
@@ -315,6 +315,7 @@ Levar para `scripts/bridge-catalog.mjs` os vínculos que hoje só existem no esp
 
 **Log**
 - 2026-11-22 · claude · TODO · criada durante a LT07 ao rodar `bridge:verify`: espelho com 73 vínculos, gerador com 31
+- 2026-11-22 · claude · IN_PROGRESS · reivindicada com aprovação do Ayrton
 
 ### LD01 · ADR-001: linguagem e tipos
 - **Status**: TODO
