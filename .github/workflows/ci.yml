@@ -57,19 +57,13 @@ jobs:
           cache: npm
           cache-dependency-path: telluslab/package-lock.json
       - run: npm ci
-      - name: Verificar o espelho do contrato
-        id: verificar
-        continue-on-error: true
+      - name: Verificar o espelho do contrato e publicar o resultado
         env:
           TELLUSPEDIA_REPO: ../telluspedia
-        run: npm run bridge:verify
-      - name: Publicar o resultado
-        env:
-          RESULTADO: ${{ steps.verificar.outcome }}
         run: |
-          if [[ "$RESULTADO" == "success" ]]; then
+          if npm run bridge:verify; then
             echo "TellusBridge em paridade com o TellusPedia." >> "$GITHUB_STEP_SUMMARY"
           else
-            echo "::warning::A verificação de paridade do TellusBridge falhou. Consulte a etapa de verificação."
+            echo "::warning::A verificação de paridade do TellusBridge falhou. Consulte o log desta etapa."
             echo "A verificação de paridade do TellusBridge falhou. Consulte o log da etapa de verificação." >> "$GITHUB_STEP_SUMMARY"
           fi
