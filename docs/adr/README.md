@@ -4,4 +4,4 @@ Cada ADR registra uma decisão que afeta o projeto inteiro: contexto, opções, 
 
 | ADR | Assunto | Tarefa | Status |
 |---|---|---|---|
-| [ADR-003](ADR-003-content-pack.md) | Content Pack v1: lições, exercícios, cartões e fontes | LD03 | Proposto |
+| [ADR-003](ADR-003-content-pack.md) | Content Pack v1: lições, exercícios, cartões e fontes | LD03 | Aceito |

@@ -1,6 +1,6 @@
 # ADR-003: Content Pack v1
 
-- **Status**: proposto, aguardando decisão do Ayrton
+- **Status**: aceito pelo Ayrton em 2026-11-22 (opção A e as quatro recomendações da seção 9)
 - **Data**: 2026-11-22
 - **Tarefa**: LD03 (backlog do TellusLab)
 - **Libera**: LT07 (schema), LT08 (`content:lint`), LT09 (leitor de lição), LT10–LT14 (exercícios, dicas, evidência, cartões), LT15 e as tarefas de conteúdo LC01–LC08
@@ -34,11 +34,11 @@ Este ADR define o formato do conteúdo e como ele se liga a essas três peças. 
 
 **C** é o que queremos sair. **D** traria interoperabilidade que não é objetivo do L1 e acoplaria o conteúdo a um modelo pedagógico que não é o nosso; um exportador para QTI pode virar épico no L2 se houver demanda. **B** funciona, mas penaliza justamente o artefato mais longo (a lição).
 
-## 3. Decisão proposta
+## 3. Decisão
 
-**Opção A**: lições em Markdown com front matter; exercícios e cartões em JSON; tudo validado por JSON Schema Draft 2020-12 no build. O build gera um JSON por domínio em `dist/content/<slug>.json`, carregado sob demanda (invariante 12), sem entrar no carregamento inicial.
+**Opção A**, aceita pelo Ayrton em 2026-11-22: lições em Markdown com front matter; exercícios e cartões em JSON; tudo validado por JSON Schema Draft 2020-12 no build. O build gera um JSON por domínio em `dist/content/<slug>.json`, carregado sob demanda (invariante 12), sem entrar no carregamento inicial.
 
-A decisão final é do Ayrton e fica registrada no Log da LD03.
+A decisão está registrada no Log da LD03.
 
 ## 4. Estrutura de pastas
 
@@ -692,7 +692,9 @@ Regras que valem para qualquer política de evidência do LT13:
 5. `check` nunca conta para `passPractice` nem para `validateCriterion`: serve à lição e a `completeSubtopic`.
 6. Etiqueta `DIF-*` vinda de `commonErrors` alimenta `diagnose` com o mesmo formato de tentativa usado hoje (`id`, `topicIds`, `difficulty`, `submittedAt`).
 
-## 9. Questões em aberto para o Ayrton
+## 9. Questões decididas
+
+As quatro recomendações abaixo foram aceitas pelo Ayrton em 2026-11-22 e valem como parte da decisão.
 
 ### 9.1 Parser do front matter
 
@@ -702,19 +704,19 @@ YAML é o formato habitual de front matter, mas parsear YAML completo à mão é
 - **(b)** Subconjunto de YAML documentado (escalares, listas de escalares, listas de mapas planos), com parser próprio pequeno e testado no LT07.
 - **(c)** Front matter em JSON.
 
-Recomendação: **(b)**, porque o front matter definido aqui só precisa desse subconjunto e o projeto não tem dependências de build além do TypeScript. Se o subconjunto se mostrar limitante, migrar para (a) é uma mudança de patch no schema.
+**Decidido: (b)**, porque o front matter definido aqui só precisa desse subconjunto e o projeto não tem dependências de build além do TypeScript. Se o subconjunto se mostrar limitante, migrar para (a) é uma mudança de patch no schema.
 
 ### 9.2 Cartões antes do S4
 
-Hoje `reviewCard` exige o macrotema dominado. Para Idiomas, revisar kana desde a primeira lição é o comportamento esperado (`schedule: "lesson"`). Permitir isso não muda as regras de estado (`refreshLearning` só olha cartões de macrotemas dominados para decidir S4, S5 e S6), mas relaxa uma guarda do `learning-core`. Recomendação: aceitar `schedule: "lesson"` e implementar no LT14, com teste de que cartões revisados antes do S4 não alteram o estado do macrotema.
+Hoje `reviewCard` exige o macrotema dominado. Para Idiomas, revisar kana desde a primeira lição é o comportamento esperado (`schedule: "lesson"`). Permitir isso não muda as regras de estado (`refreshLearning` só olha cartões de macrotemas dominados para decidir S4, S5 e S6), mas relaxa uma guarda do `learning-core`. **Decidido**: aceitar `schedule: "lesson"` e implementar no LT14, com teste de que cartões revisados antes do S4 não alteram o estado do macrotema.
 
 ### 9.3 Exercícios em `review: pending` sem evidência
 
-A regra 1 da seção 8 é conservadora: o conteúdo piloto inteiro entra como `pending` e só gera evidência depois da sua revisão. Alternativa: deixar `pending` contar e revisar depois. Recomendação: manter a regra, porque o custo de um gabarito errado virar maestria é maior que o de esperar a revisão.
+A regra 1 da seção 8 é conservadora: o conteúdo piloto inteiro entra como `pending` e só gera evidência depois da sua revisão. Alternativa: deixar `pending` contar e revisar depois. **Decidido**: manter a regra, porque o custo de um gabarito errado virar maestria é maior que o de esperar a revisão.
 
 ### 9.4 Licença padrão do conteúdo autoral
 
-Os exemplos usam `CC-BY-SA-4.0`, a proposta do LD05. O valor definitivo sai do ADR-005; trocá-lo depois é uma mudança de `defaultLicense` em 8 arquivos.
+**Decidido**: usar `CC-BY-SA-4.0`, a proposta do LD05, como valor provisório. O valor definitivo sai do ADR-005; trocá-lo depois é uma mudança de `defaultLicense` em 8 arquivos.
 
 ## 10. Consequências
 
