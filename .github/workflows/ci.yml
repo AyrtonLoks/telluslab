@@ -1,0 +1,75 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+jobs:
+  validar:
+    name: Validar com Node ${{ matrix.node }}
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node: [20, 22]
+    steps:
+      - name: Baixar o TellusLab
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+      - name: Configurar Node.js e cache do npm
+        uses: actions/setup-node@v6
+        with:
+          node-version: ${{ matrix.node }}
+          cache: npm
+      - run: npm ci
+      - run: npm test
+      - run: npm run typecheck
+      - run: npm run lint
+
+  paridade:
+    name: Paridade do TellusBridge
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: telluslab
+    steps:
+      - name: Baixar o TellusLab
+        uses: actions/checkout@v6
+        with:
+          path: telluslab
+          persist-credentials: false
+      - name: Baixar o TellusPedia
+        uses: actions/checkout@v6
+        with:
+          repository: AyrtonLoks/telluspedia
+          path: telluspedia
+          persist-credentials: false
+      - name: Configurar Node.js e cache do npm
+        uses: actions/setup-node@v6
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: telluslab/package-lock.json
+      - run: npm ci
+      - name: Verificar o espelho do contrato
+        id: verificar
+        continue-on-error: true
+        env:
+          TELLUSPEDIA_REPO: ../telluspedia
+        run: npm run bridge:verify
+      - name: Publicar o resultado
+        env:
+          RESULTADO: ${{ steps.verificar.outcome }}
+        run: |
+          if [[ "$RESULTADO" == "success" ]]; then
+            echo "TellusBridge em paridade com o TellusPedia." >> "$GITHUB_STEP_SUMMARY"
+          else
+            echo "::warning::A verificação de paridade do TellusBridge falhou. Consulte a etapa de verificação."
+            echo "A verificação de paridade do TellusBridge falhou. Consulte o log da etapa de verificação." >> "$GITHUB_STEP_SUMMARY"
+          fi

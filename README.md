@@ -1,5 +1,7 @@
 # TellusLab
 
+[![CI](https://github.com/AyrtonLoks/telluslab/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/AyrtonLoks/telluslab/actions/workflows/ci.yml)
+
 Laboratório local-first de estudo e prática, complementar ao TellusPedia. **Matemática** tem 40 obras e 88 macrotemas. **Programação e Ciência da Computação** tem 41 obras e 49 macrotemas, com 50 conexões para pré-requisitos de Matemática. **Economia e Finanças** tem 19 obras e 32 macrotemas, com 41 conexões para Matemática e duas para Programação. **Física e Óptica** tem 7 obras e 37 macrotemas, com 75 conexões para Matemática e quatro para Programação. **Engenharia** tem 5 obras e 28 macrotemas, com 65 conexões para Matemática, Física e Programação. **Humanidades e Filosofia** tem 53 obras e 36 macrotemas, com 18 conexões para Matemática, Economia, Programação e Física. **Idiomas** tem 6 obras e 13 macrotemas em 3 trilhas. **Literatura** tem 26 obras e 16 macrotemas em 4 trilhas.
 
 ## Rodar no Linux ou WSL
