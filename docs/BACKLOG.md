@@ -287,7 +287,7 @@ Abrir PR com um teste quebrado de propósito em branch descartável e ver o job 
 - 2026-11-22 · ayrton · DONE · entrega aprovada no chat e registrada pelo Codex.
 
 ### LT17 · Reconciliar o manifesto do TellusBridge com o espelho do TellusPedia
-- **Status**: IN_PROGRESS
+- **Status**: REVIEW
 - **Responsável**: claude
 - **Revisor**: codex
 - **Branch**: task/LT17-reconciliar-manifesto
@@ -306,9 +306,9 @@ Abrir PR com um teste quebrado de propósito em branch descartável e ver o job 
 Levar para `scripts/bridge-catalog.mjs` os vínculos que hoje só existem no espelho, conferindo cada um contra o registro (nós e obras existentes), até `bridge:verify` passar sem editar o espelho. Se algum vínculo do espelho não tiver respaldo no catálogo, registrar no Log e decidir com o Ayrton. Se a reconciliação exigir mudança no TellusPedia, abrir a tarefa espelho no backlog de lá.
 
 **Critérios de aceite**
-- [ ] `bridge:verify` passa contra `origin/master` do TellusPedia sem edição manual do espelho.
-- [ ] Cobertura do manifesto gerado igual ou maior que a do espelho atual (≥ 85% dos 299 nós, como na D26).
-- [ ] Teste no Lab que falha se o manifesto gerado perder vínculos já publicados.
+- [x] `bridge:verify` passa contra `origin/master` do TellusPedia sem edição manual do espelho.
+- [x] Cobertura do manifesto gerado igual ou maior que a do espelho atual (≥ 85% dos 299 nós, como na D26).
+- [x] Teste no Lab que falha se o manifesto gerado perder vínculos já publicados.
 
 **Como verificar**
 `TELLUSPEDIA_REPO=<checkout do TellusPedia> npm run bridge:verify`; `npm test`.
@@ -316,6 +316,7 @@ Levar para `scripts/bridge-catalog.mjs` os vínculos que hoje só existem no esp
 **Log**
 - 2026-11-22 · claude · TODO · criada durante a LT07 ao rodar `bridge:verify`: espelho com 73 vínculos, gerador com 31
 - 2026-11-22 · claude · IN_PROGRESS · reivindicada com aprovação do Ayrton
+- 2026-11-22 · claude · REVIEW · causa: o commit 489a3bf da D26 (TellusPedia, 2026-11-21) ampliou o manifesto direto no espelho. Diagnóstico: `registry.json` idêntico; os 31 vínculos originais estão no espelho na mesma ordem (11 iguais, 20 só com nós acrescentados no fim, 145 nós), mais 42 vínculos novos (335 nós); em todos os 73, os `bookIds` seguem a regra de derivação do gerador e todos os nós existem no registro. Correção: `scripts/bridge-links-d26.json` com `extend` (aplicado por `entityId` dentro de `link()`, porque grupos como `optics` são compartilhados) e `links`; o gerador recusa nó ou vínculo repetido e extensão sem vínculo. Resultado: 73 vínculos, 299/299 nós (100%), `bridge:verify` em paridade contra `origin/master` sem tocar o espelho; nenhuma mudança necessária no TellusPedia, logo sem tarefa espelho. Teste novo `test/bridge-manifest-publicado.test.mjs` (vínculos publicados congelados em `test/fixtures/bridge/manifest-publicado.json`, cobertura total e `bookIds` derivados); controle negativo: tirar um nó e um vínculo da tabela faz o teste apontar `dossier:astronomia-optica → DOM-MATH:5.13` e `country:AUS (vínculo inteiro)`. `docs/tellus-bridge.md` explica onde declarar vínculos e proíbe ampliar pelo espelho. Validação: 60/60, typecheck, lint, verify:git. Observação sem mudança (exigiria tarefa espelho): alguns títulos da D26 estão em Title Case, por exemplo "Vostok 1: Primeiro Voo Humano no Espaço"
 
 ### LD01 · ADR-001: linguagem e tipos
 - **Status**: TODO
