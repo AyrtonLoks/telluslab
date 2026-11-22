@@ -64,5 +64,12 @@ npm run verify:git
 
 Execute a auditoria Git após `git add`. Ela verifica os blobs do índice, inclusive itens que foram adicionados à força. O lançador `.cmd` é texto. Saídas de build, dependências, fontes binárias KaTeX, dados locais e configuração de hospedagem são ignorados. A licença MIT existente é preservada.
 
+## Contribuir
+
+- [Instruções para agentes (AGENTS.md)](AGENTS.md): comandos, invariantes, protocolo e regras de commit
+- [Backlog](docs/BACKLOG.md): tarefas, grupos de conflito e fluxo de trabalho
+
+## Documentação
+
 - [Contrato com TellusPedia](docs/telluspedia-integration.md)
 - [Publicação na main e migração do ambiente local](docs/publicacao.md)
