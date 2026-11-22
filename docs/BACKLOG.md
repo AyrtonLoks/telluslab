@@ -216,11 +216,11 @@ Ler os três arquivos; conferir cada comando citado contra `package.json`.
 - 2026-11-22 · claude · REVIEW · AGENTS.md cobre os 12 invariantes e os 9 scripts do package.json (conferido por script); CLAUDE.md importa AGENTS.md via `@AGENTS.md`, GEMINI.md só aponta; README ganhou seção Contribuir. Registrado também que `bridge:sync`/`bridge:verify` dentro de worktree precisam de `TELLUSPEDIA_REPO`. Validação: 41/41 testes, typecheck, lint e verify:git verdes
 
 ### LT02 · Lint do backlog e `backlog:next`
-- **Status**: TODO
-- **Responsável**: —
-- **Revisor**: —
-- **Branch**: —
-- **Worktree**: —
+- **Status**: IN_PROGRESS
+- **Responsável**: codex
+- **Revisor**: claude
+- **Branch**: task/LT02-backlog
+- **Worktree**: ../telluslab-wt/codex-LT02
 - **Prioridade**: Alta
 - **Área**: Processo
 - **Tamanho**: M
@@ -248,6 +248,7 @@ Ler por padrão `git show origin/main:docs/BACKLOG.md`, com `--file` para arquiv
 
 **Log**
 - 2026-11-22 · claude · TODO · criada no planejamento inicial
+- 2026-11-22 · codex · IN_PROGRESS · reivindicada
 
 ### LT03 · CI no GitHub Actions
 - **Status**: TODO
