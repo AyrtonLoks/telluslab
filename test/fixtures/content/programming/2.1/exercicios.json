@@ -1,0 +1,129 @@
+{
+  "kind": "TellusExerciseSetV1",
+  "schemaVersion": "1.0.0",
+  "node": "DOM-PROG:2.1",
+  "exercises": [
+    {
+      "id": "EXE-PROG-2.1-001",
+      "revision": 1,
+      "type": "code",
+      "role": "practice",
+      "targets": {
+        "subtopics": [
+          "2.1:sub:5"
+        ]
+      },
+      "level": 3,
+      "prompt": "Implemente `busca_ordenada(seq, x)`, que recebe uma lista `seq` em ordem crescente e devolve o índice da **primeira** ocorrência de `x`, ou `-1` se `x` não estiver na lista. Use o módulo `bisect` para obter custo $O(\\log n)$.",
+      "answer": {
+        "language": "python",
+        "starter": "from bisect import bisect_left\n\ndef busca_ordenada(seq, x):\n    pass\n",
+        "entrypoint": "busca_ordenada",
+        "tests": [
+          {
+            "args": [
+              [
+                1,
+                3,
+                5,
+                7
+              ],
+              5
+            ],
+            "expected": 2,
+            "visible": true
+          },
+          {
+            "args": [
+              [
+                1,
+                3,
+                5,
+                7
+              ],
+              4
+            ],
+            "expected": -1,
+            "visible": true
+          },
+          {
+            "args": [
+              [],
+              1
+            ],
+            "expected": -1,
+            "visible": false
+          },
+          {
+            "args": [
+              [
+                2,
+                2,
+                2
+              ],
+              2
+            ],
+            "expected": 0,
+            "visible": false
+          },
+          {
+            "args": [
+              [
+                1,
+                3,
+                5,
+                7
+              ],
+              9
+            ],
+            "expected": -1,
+            "visible": false
+          }
+        ],
+        "reference": "from bisect import bisect_left\n\ndef busca_ordenada(seq, x):\n    i = bisect_left(seq, x)\n    return i if i < len(seq) and seq[i] == x else -1\n",
+        "limits": {
+          "timeMs": 2000,
+          "memoryMb": 64
+        }
+      },
+      "hints": [
+        "`bisect_left(seq, x)` devolve a posição onde `x` seria inserido mantendo a ordem, à esquerda de iguais.",
+        "Essa posição pode ser `len(seq)` ou conter outro valor; confira antes de devolver."
+      ],
+      "solution": [
+        "`i = bisect_left(seq, x)` encontra a menor posição com `seq[i] >= x` em $O(\\log n)$.",
+        "Se `i < len(seq)` e `seq[i] == x`, `i` é a primeira ocorrência; caso contrário `x` não está na lista.",
+        "O teste com `[2, 2, 2]` confirma que `bisect_left` devolve a primeira ocorrência, e não qualquer uma."
+      ],
+      "commonErrors": [
+        {
+          "match": {
+            "failsTest": 2
+          },
+          "feedback": "Com a lista vazia, `seq[i]` gera `IndexError`. Confira `i < len(seq)` antes de acessar.",
+          "difficulty": "DIF-PROG-03"
+        },
+        {
+          "match": {
+            "failsTest": 3
+          },
+          "feedback": "Pede-se a primeira ocorrência; `bisect_right` aponta para depois do último igual.",
+          "difficulty": "DIF-PROG-02"
+        }
+      ],
+      "sources": [
+        {
+          "ref": "BIB-PROG-04",
+          "locator": "Caps. 1–2"
+        }
+      ],
+      "review": "pending",
+      "provenance": {
+        "authors": [
+          "claude"
+        ],
+        "aiAssisted": true
+      }
+    }
+  ]
+}

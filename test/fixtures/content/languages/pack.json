@@ -1,0 +1,12 @@
+{
+  "kind": "TellusContentPackV1",
+  "schemaVersion": "1.0.0",
+  "domainId": "DOM-LANG",
+  "slug": "languages",
+  "version": "0.1.0",
+  "defaultLicense": "CC-BY-SA-4.0",
+  "nodes": [
+    "DOM-LANG:1.1",
+    "DOM-LANG:4.1"
+  ]
+}

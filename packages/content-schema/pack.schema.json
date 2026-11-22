@@ -1,0 +1,17 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telluslab.local/content-schema/pack.schema.json",
+  "title": "Manifesto do Content Pack de um domínio (content/<slug>/pack.json)",
+  "type": "object",
+  "required": ["kind", "schemaVersion", "domainId", "slug", "version", "defaultLicense", "nodes"],
+  "additionalProperties": false,
+  "properties": {
+    "kind": {"type": "string", "const": "TellusContentPackV1"},
+    "schemaVersion": {"$ref": "common.schema.json#/$defs/schemaVersion"},
+    "domainId": {"$ref": "common.schema.json#/$defs/domainId"},
+    "slug": {"$ref": "common.schema.json#/$defs/slug"},
+    "version": {"$ref": "common.schema.json#/$defs/semver"},
+    "defaultLicense": {"$ref": "common.schema.json#/$defs/license"},
+    "nodes": {"type": "array", "uniqueItems": true, "items": {"$ref": "common.schema.json#/$defs/nodeId"}}
+  }
+}

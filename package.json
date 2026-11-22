@@ -14,7 +14,7 @@
     "lint": "node scripts/lint.mjs && npm run backlog:lint -- --file docs/BACKLOG.md",
     "backlog:lint": "node scripts/backlog.mjs lint",
     "backlog:next": "node scripts/backlog.mjs next",
-    "typecheck": "tsc --noEmit --strict --module nodenext --target es2022 packages/tellus-bridge/index.d.mts",
+    "typecheck": "tsc --noEmit --strict --module nodenext --target es2022 packages/tellus-bridge/index.d.mts packages/content-schema/index.d.mts",
     "bridge:sync": "npm run build && node scripts/bridge-parity.mjs --sync",
     "bridge:verify": "npm run build && node scripts/bridge-parity.mjs",
     "domains:validate": "npm run build"

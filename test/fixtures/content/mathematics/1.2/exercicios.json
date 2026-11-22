@@ -1,0 +1,74 @@
+{
+  "kind": "TellusExerciseSetV1",
+  "schemaVersion": "1.0.0",
+  "node": "DOM-MATH:1.2",
+  "exercises": [
+    {
+      "id": "EXE-MATH-1.2-001",
+      "revision": 1,
+      "type": "expression",
+      "role": "criterion",
+      "targets": {
+        "subtopics": [
+          "1.2:sub:5"
+        ],
+        "criterion": "1.2:dod:mandatory"
+      },
+      "level": 3,
+      "prompt": "Seja $h(x) = \\dfrac{1}{x - {{n}}}$, de $\\mathbb{R} \\setminus \\{ {{n}} \\}$ em $\\mathbb{R} \\setminus \\{0\\}$. Escreva a lei de $h^{-1}(y)$.",
+      "params": {
+        "n": {
+          "int": [
+            2,
+            14
+          ]
+        }
+      },
+      "answer": {
+        "expected": "\\frac{1}{y} + {{n}}",
+        "variables": [
+          "y"
+        ],
+        "domain": {
+          "exclude": [
+            0
+          ]
+        }
+      },
+      "hints": [
+        "Escreva $y = \\dfrac{1}{x - {{n}}}$ e isole $x$.",
+        "Inverta os dois lados antes de somar {{n}}."
+      ],
+      "solution": [
+        "$y = \\dfrac{1}{x - {{n}}} \\Rightarrow x - {{n}} = \\dfrac{1}{y}$, válido porque $y \\neq 0$.",
+        "$x = \\dfrac{1}{y} + {{n}}$, logo $h^{-1}(y) = \\dfrac{1}{y} + {{n}}$.",
+        "Verificação: $h(h^{-1}(y)) = \\dfrac{1}{1/y} = y$ e $h^{-1}(h(x)) = (x - {{n}}) + {{n}} = x$."
+      ],
+      "commonErrors": [
+        {
+          "match": "\\frac{1}{y} - {{n}}",
+          "feedback": "Ao isolar $x$, {{n}} passa somando para o outro lado.",
+          "difficulty": "DIF-MATH-03"
+        },
+        {
+          "match": "\\frac{1}{y - {{n}}}",
+          "feedback": "Isso troca $x$ por $y$ na fórmula original sem inverter a relação.",
+          "difficulty": "DIF-MATH-03"
+        }
+      ],
+      "sources": [
+        {
+          "ref": "BIB-MATH-01",
+          "locator": "Caps. IV, V, XI"
+        }
+      ],
+      "review": "pending",
+      "provenance": {
+        "authors": [
+          "claude"
+        ],
+        "aiAssisted": true
+      }
+    }
+  ]
+}

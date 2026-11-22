@@ -1,0 +1,31 @@
+{
+  "kind": "TellusCardSetV1",
+  "schemaVersion": "1.0.0",
+  "node": "DOM-MATH:1.1",
+  "cards": [
+    {
+      "id": "CAR-MATH-1.1-001",
+      "revision": 1,
+      "lesson": "LIC-MATH-1.1-01",
+      "front": "Primeira lei de De Morgan: $(A \\cup B)^c = \\;?$",
+      "back": "$A^c \\cap B^c$",
+      "directions": [
+        "recognition"
+      ],
+      "schedule": "mastery",
+      "sources": [
+        {
+          "ref": "BIB-MATH-01",
+          "locator": "Caps. I–III"
+        }
+      ],
+      "review": "pending",
+      "provenance": {
+        "authors": [
+          "claude"
+        ],
+        "aiAssisted": true
+      }
+    }
+  ]
+}

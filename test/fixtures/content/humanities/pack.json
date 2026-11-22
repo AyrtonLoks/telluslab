@@ -1,0 +1,11 @@
+{
+  "kind": "TellusContentPackV1",
+  "schemaVersion": "1.0.0",
+  "domainId": "DOM-HUM",
+  "slug": "humanities",
+  "version": "0.1.0",
+  "defaultLicense": "CC-BY-SA-4.0",
+  "nodes": [
+    "DOM-HUM:1.4"
+  ]
+}

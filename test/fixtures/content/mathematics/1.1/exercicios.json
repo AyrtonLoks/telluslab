@@ -1,0 +1,78 @@
+{
+  "kind": "TellusExerciseSetV1",
+  "schemaVersion": "1.0.0",
+  "node": "DOM-MATH:1.1",
+  "exercises": [
+    {
+      "id": "EXE-MATH-1.1-001",
+      "revision": 1,
+      "type": "multiple-choice",
+      "role": "check",
+      "targets": {
+        "subtopics": [
+          "1.1:sub:4"
+        ]
+      },
+      "level": 1,
+      "prompt": "Em um universo $U$, qual conjunto é igual a $(A \\cup B)^c$?",
+      "answer": {
+        "options": [
+          {
+            "id": "a",
+            "text": "$A^c \\cap B^c$"
+          },
+          {
+            "id": "b",
+            "text": "$A^c \\cup B^c$"
+          },
+          {
+            "id": "c",
+            "text": "$(A \\cap B)^c$"
+          },
+          {
+            "id": "d",
+            "text": "$A \\cap B$"
+          }
+        ],
+        "correct": [
+          "a"
+        ],
+        "shuffle": true
+      },
+      "hints": [
+        "Um elemento está fora de $A \\cup B$ quando não está em nenhum dos dois conjuntos.",
+        "Escreva \"não está em $A$\" e \"não está em $B$\" com complementares e veja qual operação liga as duas condições."
+      ],
+      "solution": [
+        "$x \\in (A \\cup B)^c$ significa $x \\notin A \\cup B$, ou seja, $x \\notin A$ e $x \\notin B$.",
+        "$x \\notin A$ equivale a $x \\in A^c$; $x \\notin B$ equivale a $x \\in B^c$.",
+        "O conectivo \"e\" corresponde à interseção: $x \\in A^c \\cap B^c$. Esta é a primeira lei de De Morgan."
+      ],
+      "commonErrors": [
+        {
+          "match": "b",
+          "feedback": "A negação de \"está em $A$ ou em $B$\" troca o \"ou\" por \"e\". $A^c \\cup B^c$ é o complementar da interseção, não da união.",
+          "difficulty": "DIF-MATH-03"
+        },
+        {
+          "match": "c",
+          "feedback": "$(A \\cap B)^c$ é a segunda lei de De Morgan; aqui o complementar é da união.",
+          "difficulty": "DIF-MATH-03"
+        }
+      ],
+      "sources": [
+        {
+          "ref": "BIB-MATH-01",
+          "locator": "Caps. I–III"
+        }
+      ],
+      "review": "pending",
+      "provenance": {
+        "authors": [
+          "claude"
+        ],
+        "aiAssisted": true
+      }
+    }
+  ]
+}

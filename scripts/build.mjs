@@ -13,6 +13,7 @@ import { literatureSeed } from '../domains/literature/seed.mjs';
 import { MATH_DOMAIN } from '../packages/learning-core/domain-packs.mjs';
 
 import { bridgeCatalog } from './bridge-catalog.mjs';
+import { contentFiles } from '../packages/content-schema/index.mjs';
 
 const root = fileURLToPath(new URL('../', import.meta.url));
 const target = resolve(root, 'dist');
@@ -100,6 +101,7 @@ await emit('bridge/manifest.json', JSON.stringify(manifest, null, 2) + '\n');
 for (const name of ['index.mjs', 'registry.schema.json', 'snapshot.schema.json', 'manifest.schema.json']) {
   await emit('packages/tellus-bridge/' + name, await read('packages/tellus-bridge/' + name));
 }
+for (const {path, contents} of contentFiles(resolve(root, 'content'))) await emit(path, contents);
 const hash = createHash('sha256').update(swSource);
 const included = [...files].sort();
 for (const path of included) {

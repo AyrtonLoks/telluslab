@@ -1,0 +1,22 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telluslab.local/content-schema/lesson.schema.json",
+  "title": "Front matter de uma lição (content/<slug>/<n.n>/licao-NN-<slug>.md)",
+  "type": "object",
+  "required": ["id", "node", "title", "minutes", "objectives", "covers", "sources", "review", "provenance", "revision"],
+  "additionalProperties": false,
+  "properties": {
+    "id": {"$ref": "common.schema.json#/$defs/lessonId"},
+    "node": {"$ref": "common.schema.json#/$defs/nodeId"},
+    "title": {"$ref": "common.schema.json#/$defs/text"},
+    "minutes": {"type": "integer", "minimum": 3, "maximum": 30},
+    "objectives": {"type": "array", "minItems": 1, "maxItems": 5, "items": {"$ref": "common.schema.json#/$defs/text"}},
+    "covers": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "common.schema.json#/$defs/subtopicId"}},
+    "sources": {"$ref": "common.schema.json#/$defs/sources"},
+    "license": {"$ref": "common.schema.json#/$defs/license"},
+    "review": {"$ref": "common.schema.json#/$defs/review"},
+    "provenance": {"$ref": "common.schema.json#/$defs/provenance"},
+    "revision": {"$ref": "common.schema.json#/$defs/revision"},
+    "status": {"$ref": "common.schema.json#/$defs/status"}
+  }
+}

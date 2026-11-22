@@ -1,0 +1,32 @@
+{
+  "kind": "TellusCardSetV1",
+  "schemaVersion": "1.0.0",
+  "node": "DOM-LANG:4.1",
+  "cards": [
+    {
+      "id": "CAR-LANG-4.1-001",
+      "revision": 1,
+      "lesson": "LIC-LANG-4.1-01",
+      "front": "か",
+      "back": "ka",
+      "directions": [
+        "recognition",
+        "production"
+      ],
+      "schedule": "lesson",
+      "sources": [
+        {
+          "ref": "BIB-LANG-05",
+          "locator": "Introdução e Fundamentos do Sistema Kanji"
+        }
+      ],
+      "review": "pending",
+      "provenance": {
+        "authors": [
+          "claude"
+        ],
+        "aiAssisted": true
+      }
+    }
+  ]
+}

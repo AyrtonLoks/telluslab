@@ -1,0 +1,92 @@
+{
+  "kind": "TellusExerciseSetV1",
+  "schemaVersion": "1.0.0",
+  "node": "DOM-PHYS:1.2",
+  "exercises": [
+    {
+      "id": "EXE-PHYS-1.2-001",
+      "revision": 1,
+      "type": "numeric",
+      "role": "practice",
+      "targets": {
+        "subtopics": [
+          "1.2:sub:3"
+        ]
+      },
+      "level": 1,
+      "prompt": "Um objeto é solto a partir do repouso de uma altura de {{h}} m. Despreze a resistência do ar e use $g = 9{,}8\\ \\text{m/s}^2$. Quanto tempo ele leva para chegar ao solo?",
+      "params": {
+        "h": {
+          "choice": [
+            5,
+            10,
+            20,
+            45,
+            80
+          ]
+        }
+      },
+      "derived": {
+        "t": "sqrt(2 * h / 9.8)"
+      },
+      "answer": {
+        "value": "t",
+        "tolerance": {
+          "relative": 0.01
+        },
+        "unit": "s",
+        "acceptUnits": [
+          "s",
+          "segundo",
+          "segundos"
+        ]
+      },
+      "hints": [
+        "Com aceleração constante e velocidade inicial nula, a distância percorrida é $h = \\tfrac{1}{2} g t^2$.",
+        "Isole $t$ e lembre que o tempo é positivo."
+      ],
+      "solution": [
+        "Adote o eixo vertical para baixo, com $v_0 = 0$ e $a = g$.",
+        "$h = \\tfrac{1}{2} g t^2 \\Rightarrow t = \\sqrt{2h/g}$.",
+        "Com $h = {{h}}$ m: $t = \\sqrt{2 \\cdot {{h}} / 9{,}8} \\approx {{t|2}}$ s.",
+        "Verificação dimensional: $\\sqrt{\\text{m} / (\\text{m/s}^2)} = \\text{s}$."
+      ],
+      "commonErrors": [
+        {
+          "match": {
+            "value": "sqrt(h / 9.8)"
+          },
+          "feedback": "O fator $\\tfrac{1}{2}$ de $h = \\tfrac{1}{2} g t^2$ ficou de fora.",
+          "difficulty": "DIF-PHYS-04"
+        },
+        {
+          "match": {
+            "value": "2 * h / 9.8"
+          },
+          "feedback": "Faltou a raiz quadrada: $2h/g$ tem unidade de $\\text{s}^2$.",
+          "difficulty": "DIF-PHYS-03"
+        },
+        {
+          "match": {
+            "unitMismatch": true
+          },
+          "feedback": "A grandeza pedida é um tempo. Confira a unidade da resposta.",
+          "difficulty": "DIF-PHYS-03"
+        }
+      ],
+      "sources": [
+        {
+          "ref": "BIB-PHYS-01",
+          "locator": "Caps. 2, 4"
+        }
+      ],
+      "review": "pending",
+      "provenance": {
+        "authors": [
+          "claude"
+        ],
+        "aiAssisted": true
+      }
+    }
+  ]
+}

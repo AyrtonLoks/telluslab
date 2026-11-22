@@ -1,0 +1,82 @@
+{
+  "kind": "TellusExerciseSetV1",
+  "schemaVersion": "1.0.0",
+  "node": "DOM-LANG:1.1",
+  "exercises": [
+    {
+      "id": "EXE-LANG-1.1-001",
+      "revision": 1,
+      "type": "cloze",
+      "role": "practice",
+      "targets": {
+        "subtopics": [
+          "1.1:sub:2"
+        ]
+      },
+      "level": 2,
+      "prompt": "Complete com o verbo entre parênteses no Present Simple ou no Present Continuous.\n\n1. Water [[b1]] (boil) at 100 °C at sea level.\n2. Look! It [[b2]] (rain).",
+      "answer": {
+        "blanks": {
+          "b1": {
+            "accept": [
+              "boils"
+            ],
+            "normalize": [
+              "trim",
+              "case",
+              "spaces"
+            ]
+          },
+          "b2": {
+            "accept": [
+              "is raining",
+              "'s raining"
+            ],
+            "normalize": [
+              "trim",
+              "case",
+              "spaces"
+            ]
+          }
+        }
+      },
+      "hints": [
+        "Uma frase descreve um fato geral; a outra, algo acontecendo agora.",
+        "Fatos gerais usam Present Simple; ações em progresso usam be + verbo com -ing."
+      ],
+      "solution": [
+        "1. Fato geral: Present Simple na terceira pessoa do singular, \"boils\".",
+        "2. \"Look!\" indica ação em progresso no momento da fala: Present Continuous, \"is raining\"."
+      ],
+      "commonErrors": [
+        {
+          "match": {
+            "b1": "is boiling"
+          },
+          "feedback": "A frase descreve um fato geral, não algo acontecendo agora.",
+          "difficulty": "DIF-LANG-03"
+        },
+        {
+          "match": {
+            "b2": "rains"
+          },
+          "feedback": "\"Look!\" chama a atenção para algo acontecendo neste momento.",
+          "difficulty": "DIF-LANG-03"
+        }
+      ],
+      "sources": [
+        {
+          "ref": "BIB-LANG-01",
+          "locator": "Seções 1–3: be/have, Present Tenses, Imperatives & Basic Word Order"
+        }
+      ],
+      "review": "pending",
+      "provenance": {
+        "authors": [
+          "claude"
+        ],
+        "aiAssisted": true
+      }
+    }
+  ]
+}

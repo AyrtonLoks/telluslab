@@ -1,0 +1,67 @@
+{
+  "kind": "TellusExerciseSetV1",
+  "schemaVersion": "1.0.0",
+  "node": "DOM-HUM:1.4",
+  "exercises": [
+    {
+      "id": "EXE-HUM-1.4-001",
+      "revision": 1,
+      "type": "rubric",
+      "role": "criterion",
+      "targets": {
+        "subtopics": [
+          "1.4:sub:2",
+          "1.4:sub:3"
+        ],
+        "criterion": "1.4:dod:mandatory"
+      },
+      "level": 3,
+      "prompt": "Leia o diálogo:\n\n> **Ana**: A proposta aumenta o gasto sem indicar a fonte de receita.\n> **Bruno**: Na semana passada você mesma defendeu cortar impostos. Agora quer mais gasto?\n> **Caio**: Ninguém deveria ouvir alguém que nem terminou a faculdade.\n\nClassifique as falas de Bruno e de Caio entre argumento *ad hominem* (*ex concessis*) e argumento *ad personam*, justifique cada classificação e redija uma resposta *ad rem* para a fala de Caio.",
+      "answer": {
+        "criteria": [
+          {
+            "id": "c1",
+            "description": "Classifica a fala de Bruno como ad hominem no sentido de Schopenhauer (ex concessis)",
+            "evidence": "Menciona que Bruno usa uma concessão anterior da própria Ana"
+          },
+          {
+            "id": "c2",
+            "description": "Classifica a fala de Caio como ad personam",
+            "evidence": "Menciona que Caio ataca a pessoa e abandona o objeto da discussão"
+          },
+          {
+            "id": "c3",
+            "description": "Redige uma resposta ad rem",
+            "evidence": "A resposta volta à questão da fonte de receita sem atacar Caio"
+          }
+        ],
+        "minWords": 60,
+        "maxWords": 250,
+        "exemplar": "Bruno usa um argumento ad hominem no sentido de Schopenhauer: parte de uma posição que a própria Ana concedeu antes (cortar impostos) para apontar uma inconsistência, sem examinar a proposta em si. Caio usa um argumento ad personam: desqualifica Ana por sua formação e abandona o objeto da discussão. Resposta ad rem: \"A formação de quem fala não altera a pergunta: qual receita cobre o novo gasto?\""
+      },
+      "hints": [
+        "Para Schopenhauer, ad hominem trabalha com as concessões do adversário; ad personam ataca a pessoa.",
+        "Uma resposta ad rem trata do objeto em discussão, não de quem falou."
+      ],
+      "solution": [
+        "Bruno: ad hominem (ex concessis). Ele confronta Ana com uma posição que ela mesma sustentou.",
+        "Caio: ad personam. A formação de Ana não tem relação com a questão da receita.",
+        "Resposta ad rem: reconduzir à pergunta sobre a fonte de receita, sem responder ao ataque pessoal."
+      ],
+      "commonErrors": [],
+      "sources": [
+        {
+          "ref": "BIB-HUM-06",
+          "locator": "Introdução e Estratagemas 1–38"
+        }
+      ],
+      "review": "pending",
+      "provenance": {
+        "authors": [
+          "claude"
+        ],
+        "aiAssisted": true
+      }
+    }
+  ]
+}

@@ -20,7 +20,7 @@ Todos os scripts de `package.json`:
 | `npm run build` | Gera o site em `dist/` (`scripts/build.mjs`) |
 | `npm start` | Build e servidor em `http://127.0.0.1:4175`, com 4183 como alternativa (`serve.mjs`) |
 | `npm test` | Build e `node --test` sobre `test/` |
-| `npm run typecheck` | `tsc` estrito sobre os tipos do TellusBridge (`packages/tellus-bridge/index.d.mts`) |
+| `npm run typecheck` | `tsc` estrito sobre os tipos do TellusBridge e do Content Pack (`packages/tellus-bridge/index.d.mts`, `packages/content-schema/index.d.mts`) |
 | `npm run lint` | Verifica a sintaxe dos arquivos JavaScript e valida a cópia local do backlog |
 | `npm run backlog:lint` | Valida `origin/main:docs/BACKLOG.md`; use `-- --file <caminho>` para uma cópia local |
 | `npm run backlog:next -- --agent <agente>` | Lista as tarefas disponíveis e explica impedimentos; aceita `--file <caminho>` junto com `--agent` |
@@ -56,6 +56,8 @@ Abrir um domínio direto: `/lab?domain=physics&topic=7.3`.
 | `domains/<slug>/` | Domain Packs de `economics-finance`, `physics`, `engineering`, `humanities`, `languages` e `literature`: especificação em `data/`, seed e perfil de autoria |
 | `packages/tellus-bridge/` | Schemas JSON Draft 2020-12, tipos TypeScript e gerador do contrato TellusBridge v1 |
 | `packages/telluspedia-bridge/` | Contrato legado de lançamento e envelopes por área |
+| `packages/content-schema/` | Schemas JSON Draft 2020-12, tipos e validador do Content Pack v1 ([ADR-003](docs/adr/ADR-003-content-pack.md)); o build valida `content/` e grava `dist/content/<slug>.json` |
+| `content/<slug>/` | Lições, exercícios e cartões de cada domínio, no formato do ADR-003; `content/sources/registry.json` é o registro de fontes |
 | `scripts/` | Build, catálogo e paridade da ponte, lint e auditoria do índice Git |
 | `test/` | Testes `node --test` por domínio, integração e ponte |
 | `docs/` | Backlog, integração com o TellusPedia, contrato da ponte e publicação |

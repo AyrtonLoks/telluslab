@@ -1,0 +1,12 @@
+{
+  "kind": "TellusContentPackV1",
+  "schemaVersion": "1.0.0",
+  "domainId": "DOM-MATH",
+  "slug": "mathematics",
+  "version": "0.1.0",
+  "defaultLicense": "CC-BY-SA-4.0",
+  "nodes": [
+    "DOM-MATH:1.1",
+    "DOM-MATH:1.2"
+  ]
+}

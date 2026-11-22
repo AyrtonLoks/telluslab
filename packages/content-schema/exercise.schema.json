@@ -1,0 +1,194 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telluslab.local/content-schema/exercise.schema.json",
+  "title": "Exercícios de um macrotema (content/<slug>/<n.n>/exercicios.json)",
+  "type": "object",
+  "required": ["kind", "schemaVersion", "node", "exercises"],
+  "additionalProperties": false,
+  "properties": {
+    "kind": {"type": "string", "const": "TellusExerciseSetV1"},
+    "schemaVersion": {"$ref": "common.schema.json#/$defs/schemaVersion"},
+    "node": {"$ref": "common.schema.json#/$defs/nodeId"},
+    "exercises": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/exercise"}}
+  },
+  "$defs": {
+    "exercise": {
+      "type": "object",
+      "required": ["id", "revision", "type", "role", "targets", "level", "prompt", "answer", "hints", "solution", "sources", "review", "provenance"],
+      "additionalProperties": false,
+      "properties": {
+        "id": {"$ref": "common.schema.json#/$defs/exerciseId"},
+        "revision": {"$ref": "common.schema.json#/$defs/revision"},
+        "status": {"$ref": "common.schema.json#/$defs/status"},
+        "attemptsValidFrom": {"$ref": "common.schema.json#/$defs/revision"},
+        "type": {"type": "string", "enum": ["multiple-choice", "numeric", "short-text", "ordering", "cloze", "expression", "code", "rubric"]},
+        "role": {"type": "string", "enum": ["check", "practice", "criterion"]},
+        "targets": {"$ref": "#/$defs/targets"},
+        "level": {"type": "integer", "minimum": 1, "maximum": 5},
+        "prompt": {"$ref": "common.schema.json#/$defs/text"},
+        "params": {"type": "object", "minProperties": 1, "propertyNames": {"$ref": "#/$defs/name"}, "additionalProperties": {"$ref": "#/$defs/generator"}},
+        "derived": {"type": "object", "minProperties": 1, "propertyNames": {"$ref": "#/$defs/name"}, "additionalProperties": {"$ref": "common.schema.json#/$defs/text"}},
+        "answer": {"type": "object"},
+        "hints": {"type": "array", "minItems": 1, "maxItems": 5, "items": {"$ref": "common.schema.json#/$defs/text"}},
+        "solution": {"type": "array", "minItems": 1, "items": {"$ref": "common.schema.json#/$defs/text"}},
+        "commonErrors": {"type": "array", "items": {"$ref": "#/$defs/commonError"}},
+        "sources": {"$ref": "common.schema.json#/$defs/sources"},
+        "license": {"$ref": "common.schema.json#/$defs/license"},
+        "review": {"$ref": "common.schema.json#/$defs/review"},
+        "provenance": {"$ref": "common.schema.json#/$defs/provenance"}
+      },
+      "allOf": [
+        {"if": {"properties": {"type": {"const": "multiple-choice"}}, "required": ["type"]}, "then": {"properties": {"answer": {"$ref": "#/$defs/answerMultipleChoice"}}}},
+        {"if": {"properties": {"type": {"const": "numeric"}}, "required": ["type"]}, "then": {"properties": {"answer": {"$ref": "#/$defs/answerNumeric"}}}},
+        {"if": {"properties": {"type": {"const": "short-text"}}, "required": ["type"]}, "then": {"properties": {"answer": {"$ref": "#/$defs/answerShortText"}}}},
+        {"if": {"properties": {"type": {"const": "ordering"}}, "required": ["type"]}, "then": {"properties": {"answer": {"$ref": "#/$defs/answerOrdering"}}}},
+        {"if": {"properties": {"type": {"const": "cloze"}}, "required": ["type"]}, "then": {"properties": {"answer": {"$ref": "#/$defs/answerCloze"}}}},
+        {"if": {"properties": {"type": {"const": "expression"}}, "required": ["type"]}, "then": {"properties": {"answer": {"$ref": "#/$defs/answerExpression"}}}},
+        {"if": {"properties": {"type": {"const": "code"}}, "required": ["type"]}, "then": {"properties": {"answer": {"$ref": "#/$defs/answerCode"}}}},
+        {"if": {"properties": {"type": {"const": "rubric"}}, "required": ["type"]}, "then": {"properties": {"answer": {"$ref": "#/$defs/answerRubric"}}}},
+        {"if": {"properties": {"role": {"const": "criterion"}}, "required": ["role"]}, "then": {"properties": {"targets": {"required": ["criterion"]}}}}
+      ]
+    },
+    "name": {"type": "string", "pattern": "^[a-z][a-zA-Z0-9]*$"},
+    "targets": {
+      "type": "object",
+      "required": ["subtopics"],
+      "additionalProperties": false,
+      "properties": {
+        "subtopics": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "common.schema.json#/$defs/subtopicId"}},
+        "criterion": {"$ref": "common.schema.json#/$defs/criterionId"}
+      }
+    },
+    "generator": {
+      "type": "object",
+      "minProperties": 1,
+      "anyOf": [
+        {"required": ["int"], "additionalProperties": false, "properties": {
+          "int": {"type": "array", "minItems": 2, "maxItems": 2, "items": {"type": "integer"}},
+          "step": {"type": "integer", "minimum": 1}
+        }},
+        {"required": ["choice"], "additionalProperties": false, "properties": {
+          "choice": {"type": "array", "minItems": 2, "items": {"type": ["string", "number"]}}
+        }},
+        {"required": ["pick"], "additionalProperties": false, "properties": {
+          "pick": {"type": "array", "minItems": 2, "items": {"type": "object", "minProperties": 1, "additionalProperties": {"type": ["string", "number"]}}}
+        }}
+      ]
+    },
+    "commonError": {
+      "type": "object",
+      "required": ["match", "feedback", "difficulty"],
+      "additionalProperties": false,
+      "properties": {
+        "match": {"type": ["string", "number", "array", "object"]},
+        "feedback": {"$ref": "common.schema.json#/$defs/text"},
+        "difficulty": {"$ref": "common.schema.json#/$defs/difficultyId"}
+      }
+    },
+    "normalize": {"type": "array", "uniqueItems": true, "items": {"type": "string", "enum": ["trim", "case", "accents", "spaces", "width"]}},
+    "answerMultipleChoice": {
+      "type": "object",
+      "required": ["options", "correct"],
+      "additionalProperties": false,
+      "properties": {
+        "options": {"type": "array", "minItems": 2, "items": {"type": "object", "required": ["id", "text"], "additionalProperties": false, "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9]+$"},
+          "text": {"$ref": "common.schema.json#/$defs/text"}
+        }}},
+        "correct": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z0-9]+$"}},
+        "shuffle": {"type": "boolean"}
+      }
+    },
+    "answerNumeric": {
+      "type": "object",
+      "required": ["value", "tolerance"],
+      "additionalProperties": false,
+      "properties": {
+        "value": {"type": ["number", "string"], "minLength": 1},
+        "tolerance": {"type": "object", "minProperties": 1, "additionalProperties": false, "properties": {
+          "absolute": {"type": "number", "minimum": 0},
+          "relative": {"type": "number", "minimum": 0, "maximum": 1}
+        }},
+        "unit": {"$ref": "common.schema.json#/$defs/text"},
+        "acceptUnits": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "common.schema.json#/$defs/text"}}
+      }
+    },
+    "answerShortText": {
+      "type": "object",
+      "required": ["accept"],
+      "additionalProperties": false,
+      "properties": {
+        "accept": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "common.schema.json#/$defs/text"}},
+        "normalize": {"$ref": "#/$defs/normalize"}
+      }
+    },
+    "answerOrdering": {
+      "type": "object",
+      "required": ["items", "order"],
+      "additionalProperties": false,
+      "properties": {
+        "items": {"type": "array", "minItems": 2, "items": {"type": "object", "required": ["id", "text"], "additionalProperties": false, "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9]+$"},
+          "text": {"$ref": "common.schema.json#/$defs/text"}
+        }}},
+        "order": {"type": "array", "minItems": 2, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-z0-9]+$"}}
+      }
+    },
+    "answerCloze": {
+      "type": "object",
+      "required": ["blanks"],
+      "additionalProperties": false,
+      "properties": {
+        "blanks": {"type": "object", "minProperties": 1, "propertyNames": {"type": "string", "pattern": "^[a-z0-9]+$"}, "additionalProperties": {"$ref": "#/$defs/answerShortText"}}
+      }
+    },
+    "answerExpression": {
+      "type": "object",
+      "required": ["expected", "variables"],
+      "additionalProperties": false,
+      "properties": {
+        "expected": {"$ref": "common.schema.json#/$defs/text"},
+        "variables": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"type": "string", "pattern": "^[a-zA-Z]$"}},
+        "domain": {"type": "object", "additionalProperties": false, "properties": {
+          "exclude": {"type": "array", "items": {"type": "number"}}
+        }},
+        "form": {"type": "string", "enum": ["factored", "expanded", "simplified"]}
+      }
+    },
+    "answerCode": {
+      "type": "object",
+      "required": ["language", "entrypoint", "tests", "reference"],
+      "additionalProperties": false,
+      "properties": {
+        "language": {"type": "string", "enum": ["python", "javascript", "sql"]},
+        "starter": {"type": "string"},
+        "entrypoint": {"type": "string", "pattern": "^[A-Za-z_][A-Za-z0-9_]*$"},
+        "tests": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["args", "expected", "visible"], "additionalProperties": false, "properties": {
+          "args": {"type": "array"},
+          "expected": {},
+          "visible": {"type": "boolean"}
+        }}},
+        "reference": {"$ref": "common.schema.json#/$defs/text"},
+        "limits": {"type": "object", "additionalProperties": false, "properties": {
+          "timeMs": {"type": "integer", "minimum": 100, "maximum": 30000},
+          "memoryMb": {"type": "integer", "minimum": 8, "maximum": 512}
+        }}
+      }
+    },
+    "answerRubric": {
+      "type": "object",
+      "required": ["criteria"],
+      "additionalProperties": false,
+      "properties": {
+        "criteria": {"type": "array", "minItems": 1, "items": {"type": "object", "required": ["id", "description", "evidence"], "additionalProperties": false, "properties": {
+          "id": {"type": "string", "pattern": "^[a-z0-9]+$"},
+          "description": {"$ref": "common.schema.json#/$defs/text"},
+          "evidence": {"$ref": "common.schema.json#/$defs/text"}
+        }}},
+        "minWords": {"type": "integer", "minimum": 1},
+        "maxWords": {"type": "integer", "minimum": 1},
+        "exemplar": {"$ref": "common.schema.json#/$defs/text"}
+      }
+    }
+  }
+}

@@ -1,0 +1,80 @@
+{
+  "kind": "TellusExerciseSetV1",
+  "schemaVersion": "1.0.0",
+  "node": "DOM-PROG:1.3",
+  "exercises": [
+    {
+      "id": "EXE-PROG-1.3-001",
+      "revision": 1,
+      "type": "ordering",
+      "role": "practice",
+      "targets": {
+        "subtopics": [
+          "1.3:sub:2"
+        ]
+      },
+      "level": 2,
+      "prompt": "Considere a função em C:\n\n```c\nint fatorial(int n) {\n  if (n == 0) return 1;\n  return n * fatorial(n - 1);\n}\n```\n\nNa chamada `fatorial(3)`, ordene as chamadas pela ordem em que **retornam**.",
+      "answer": {
+        "items": [
+          {
+            "id": "f3",
+            "text": "`fatorial(3)`"
+          },
+          {
+            "id": "f2",
+            "text": "`fatorial(2)`"
+          },
+          {
+            "id": "f1",
+            "text": "`fatorial(1)`"
+          },
+          {
+            "id": "f0",
+            "text": "`fatorial(0)`"
+          }
+        ],
+        "order": [
+          "f0",
+          "f1",
+          "f2",
+          "f3"
+        ]
+      },
+      "hints": [
+        "Uma chamada só pode retornar depois que a chamada recursiva que ela fez retornou.",
+        "A pilha de chamadas é LIFO: o último quadro empilhado é o primeiro a sair."
+      ],
+      "solution": [
+        "`fatorial(3)` chama `fatorial(2)`, que chama `fatorial(1)`, que chama `fatorial(0)`.",
+        "`fatorial(0)` atinge o caso base e retorna 1 sem nova chamada.",
+        "Os quadros são desempilhados na ordem inversa: `fatorial(1)` retorna 1, `fatorial(2)` retorna 2 e `fatorial(3)` retorna 6."
+      ],
+      "commonErrors": [
+        {
+          "match": [
+            "f3",
+            "f2",
+            "f1",
+            "f0"
+          ],
+          "feedback": "Essa é a ordem em que as chamadas começam. Elas retornam na ordem inversa, porque cada uma espera a seguinte terminar.",
+          "difficulty": "DIF-PROG-04"
+        }
+      ],
+      "sources": [
+        {
+          "ref": "BIB-PROG-01",
+          "locator": "Cap. 5"
+        }
+      ],
+      "review": "pending",
+      "provenance": {
+        "authors": [
+          "claude"
+        ],
+        "aiAssisted": true
+      }
+    }
+  ]
+}

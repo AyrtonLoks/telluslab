@@ -1,0 +1,83 @@
+{
+  "kind": "TellusExerciseSetV1",
+  "schemaVersion": "1.0.0",
+  "node": "DOM-LANG:4.1",
+  "exercises": [
+    {
+      "id": "EXE-LANG-4.1-001",
+      "revision": 1,
+      "type": "short-text",
+      "role": "practice",
+      "targets": {
+        "subtopics": [
+          "4.1:sub:1"
+        ]
+      },
+      "level": 1,
+      "prompt": "Escreva a romanização Hepburn do hiragana {{kana.k}}.",
+      "params": {
+        "kana": {
+          "pick": [
+            {
+              "k": "か",
+              "r": "ka"
+            },
+            {
+              "k": "き",
+              "r": "ki"
+            },
+            {
+              "k": "く",
+              "r": "ku"
+            },
+            {
+              "k": "け",
+              "r": "ke"
+            },
+            {
+              "k": "こ",
+              "r": "ko"
+            }
+          ]
+        }
+      },
+      "answer": {
+        "accept": [
+          "{{kana.r}}"
+        ],
+        "normalize": [
+          "trim",
+          "case",
+          "width"
+        ]
+      },
+      "hints": [
+        "Este caractere pertence à linha do K na tabela do hiragana.",
+        "Na linha do K, as vogais seguem a ordem a, i, u, e, o."
+      ],
+      "solution": [
+        "{{kana.k}} pertence à linha do K e se romaniza como \"{{kana.r}}\" no sistema Hepburn."
+      ],
+      "commonErrors": [
+        {
+          "match": "ca",
+          "feedback": "Em Hepburn, o som /k/ é sempre escrito com k, nunca com c.",
+          "difficulty": "DIF-LANG-02"
+        }
+      ],
+      "sources": [
+        {
+          "ref": "BIB-LANG-05",
+          "locator": "Introdução e Fundamentos do Sistema Kanji"
+        }
+      ],
+      "review": "pending",
+      "provenance": {
+        "authors": [
+          "claude"
+        ],
+        "aiAssisted": true
+      }
+    }
+  ]
+}

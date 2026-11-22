@@ -1,0 +1,44 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://telluslab.local/content-schema/common.schema.json",
+  "title": "Definições comuns do Content Pack v1",
+  "$defs": {
+    "schemaVersion": {"type": "string", "const": "1.0.0"},
+    "semver": {"type": "string", "pattern": "^(0|[1-9]\\d*)\\.(0|[1-9]\\d*)\\.(0|[1-9]\\d*)$"},
+    "domainId": {"type": "string", "pattern": "^DOM-(MATH|PROG|ECON|PHYS|ENG|HUM|LANG|LIT)$"},
+    "slug": {"type": "string", "enum": ["mathematics", "programming", "economics-finance", "physics", "engineering", "humanities", "languages", "literature"]},
+    "nodeId": {"type": "string", "pattern": "^DOM-(MATH|PROG|ECON|PHYS|ENG|HUM|LANG|LIT):\\d+\\.\\d+$"},
+    "lessonId": {"type": "string", "pattern": "^LIC-(MATH|PROG|ECON|PHYS|ENG|HUM|LANG|LIT)-\\d+\\.\\d+-\\d{2}$"},
+    "exerciseId": {"type": "string", "pattern": "^EXE-(MATH|PROG|ECON|PHYS|ENG|HUM|LANG|LIT)-\\d+\\.\\d+-\\d{3}$"},
+    "cardId": {"type": "string", "pattern": "^CAR-(MATH|PROG|ECON|PHYS|ENG|HUM|LANG|LIT)-\\d+\\.\\d+-\\d{3}$"},
+    "sourceRegistryId": {"type": "string", "pattern": "^FON-\\d{4}$"},
+    "subtopicId": {"type": "string", "pattern": "^\\d+\\.\\d+:sub:\\d+$"},
+    "criterionId": {"type": "string", "pattern": "^\\d+\\.\\d+:dod:[a-z][a-z0-9-]*$"},
+    "difficultyId": {"type": "string", "pattern": "^DIF-(MATH|PROG|ECON|PHYS|ENG|HUM|LANG|LIT)-\\d{2}$"},
+    "license": {"type": "string", "pattern": "^(LicenseRef-[A-Za-z0-9.-]+|[A-Za-z0-9][A-Za-z0-9.+-]*)$"},
+    "text": {"type": "string", "minLength": 1},
+    "revision": {"type": "integer", "minimum": 1},
+    "status": {"type": "string", "enum": ["active", "retired"]},
+    "review": {"type": "string", "enum": ["pending", "ok"]},
+    "provenance": {
+      "type": "object",
+      "required": ["authors", "aiAssisted"],
+      "additionalProperties": false,
+      "properties": {
+        "authors": {"type": "array", "minItems": 1, "uniqueItems": true, "items": {"$ref": "#/$defs/text"}},
+        "aiAssisted": {"type": "boolean"}
+      }
+    },
+    "sourceRef": {
+      "type": "object",
+      "required": ["ref", "locator"],
+      "additionalProperties": false,
+      "properties": {
+        "ref": {"type": "string", "pattern": "^(BIB-(MATH|PROG|ECON|PHYS|ENG|HUM|LANG|LIT)-\\d{2}|FON-\\d{4})$"},
+        "locator": {"$ref": "#/$defs/text"},
+        "excerpt": {"type": "boolean"}
+      }
+    },
+    "sources": {"type": "array", "minItems": 1, "items": {"$ref": "#/$defs/sourceRef"}}
+  }
+}

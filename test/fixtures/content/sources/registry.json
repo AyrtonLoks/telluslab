@@ -1,0 +1,14 @@
+{
+  "kind": "TellusSourceRegistryV1",
+  "schemaVersion": "1.0.0",
+  "sources": [
+    {
+      "id": "FON-0001",
+      "title": "Fonte fictícia usada só nos testes",
+      "url": "https://example.org/fonte-de-teste",
+      "license": "CC0-1.0",
+      "attribution": "Fonte de teste (example.org), CC0 1.0",
+      "verifiedAt": "2026-11-22"
+    }
+  ]
+}
