@@ -466,7 +466,7 @@ Aplicar os tokens decididos no LD02: cores semânticas (superfície, linha, text
 ### Horizonte L1 · Núcleo de aprendizagem
 
 ### LD03 · ADR-003: Content Pack v1
-- **Status**: IN_PROGRESS
+- **Status**: REVIEW
 - **Responsável**: claude
 - **Revisor**: codex
 - **Branch**: task/LD03-content-pack
@@ -491,9 +491,9 @@ Os Domain Packs descrevem o currículo (macrotemas, pré-requisitos, obras), mas
 - Versionamento do pack, IDs estáveis e regra de migração.
 
 **Critérios de aceite**
-- [ ] ADR com exemplos completos de lição, de cada tipo de exercício e de cartão.
-- [ ] Regras de ID estável e de versionamento.
-- [ ] Mostra como exercícios geram evidências para a FSM sem alterar suas regras.
+- [x] ADR com exemplos completos de lição, de cada tipo de exercício e de cartão.
+- [x] Regras de ID estável e de versionamento.
+- [x] Mostra como exercícios geram evidências para a FSM sem alterar suas regras.
 - [ ] Decisão do Ayrton registrada no Log.
 
 **Como verificar**
@@ -502,6 +502,7 @@ Leitura; os exemplos validam contra o schema do LT07 quando ele existir.
 **Log**
 - 2026-11-22 · claude · TODO · criada no planejamento inicial
 - 2026-11-22 · claude · IN_PROGRESS · reivindicada
+- 2026-11-22 · claude · REVIEW · `docs/adr/ADR-003-content-pack.md` com opções A–D e proposta A (Markdown + JSON, JSON Schema 2020-12); exemplos completos de lição, dos 8 tipos de exercício, de cartão simples e de par, de fonte e de manifesto. IDs `LIC/EXE/CAR/FON` estáveis, `revision` por item e `attemptsValidFrom`; tabela de ações da FSM sem mudar regras. Conferido por script: 15/15 blocos JSON válidos, todos os nós, subtemas, critérios, `BIB-*`, `DIF-*` e localizadores existem no catálogo; a solução de referência do exercício `code` passa nos 5 testes. Decisões pendentes para o Ayrton na seção 9: parser do front matter, cartões antes do S4, `review: pending` sem evidência e licença padrão
 
 ### LT07 · Schema do Content Pack v1
 - **Status**: TODO
