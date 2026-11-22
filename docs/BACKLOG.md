@@ -252,11 +252,11 @@ Ler por padrão `git show origin/main:docs/BACKLOG.md`, com `--file` para arquiv
 - 2026-11-22 · codex · REVIEW · lint e seleção de tarefas com testes para backlogs válidos e inválidos. Validação: 46/46 testes, typecheck, lint e verify:git verdes. A cópia anterior à reivindicação lista LT02 e LT03, e a cópia com LT13 e LT14 em andamento aponta o conflito em G-CORE por linha.
 
 ### LT03 · CI no GitHub Actions
-- **Status**: TODO
-- **Responsável**: —
+- **Status**: IN_PROGRESS
+- **Responsável**: codex
 - **Revisor**: —
-- **Branch**: —
-- **Worktree**: —
+- **Branch**: task/LT03-ci
+- **Worktree**: ../telluslab-wt/codex-LT03
 - **Prioridade**: Alta
 - **Área**: Infraestrutura
 - **Tamanho**: M
@@ -281,6 +281,7 @@ Abrir PR com um teste quebrado de propósito em branch descartável e ver o job 
 
 **Log**
 - 2026-11-22 · claude · TODO · criada no planejamento inicial
+- 2026-11-22 · codex · IN_PROGRESS · reivindicada
 
 ### LD01 · ADR-001: linguagem e tipos
 - **Status**: TODO
