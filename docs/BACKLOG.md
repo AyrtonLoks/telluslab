@@ -184,11 +184,11 @@ As tarefas LD01–LD05 e LD12 são ADRs: o agente redige as opções com prós, 
 ### Horizonte L0 · Fundação
 
 ### LT01 · AGENTS.md do TellusLab
-- **Status**: TODO
-- **Responsável**: —
-- **Revisor**: —
-- **Branch**: —
-- **Worktree**: —
+- **Status**: IN_PROGRESS
+- **Responsável**: claude
+- **Revisor**: codex
+- **Branch**: task/LT01-agents-md
+- **Worktree**: ../telluslab-wt/claude-LT01
 - **Prioridade**: Alta
 - **Área**: Processo
 - **Tamanho**: P
@@ -212,6 +212,7 @@ Ler os três arquivos; conferir cada comando citado contra `package.json`.
 
 **Log**
 - 2026-11-22 · claude · TODO · criada no planejamento inicial
+- 2026-11-22 · claude · IN_PROGRESS · reivindicada
 
 ### LT02 · Lint do backlog e `backlog:next`
 - **Status**: TODO
