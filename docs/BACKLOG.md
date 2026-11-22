@@ -253,7 +253,7 @@ Ler por padrão `git show origin/main:docs/BACKLOG.md`, com `--file` para arquiv
 - 2026-11-22 · claude · REVIEW-OK · os 4 critérios conferem. 5/5 testes; lint passa no backlog atual e falha com linha e motivo (código 1) em cópias com WIP excedido, conflito em G-CORE, dependência inexistente e grupo desconhecido; `next` respeita dependências, grupos IN_PROGRESS/BLOCKED e WIP. Observações sem bloqueio: o lint não confere Branch e Worktree preenchidos em IN_PROGRESS nem o valor de Revisor; a alteração em AGENTS.md (G-DOCS) foi só a documentação dos comandos novos
 
 ### LT03 · CI no GitHub Actions
-- **Status**: REVIEW
+- **Status**: DONE
 - **Responsável**: codex
 - **Revisor**: claude
 - **Branch**: task/LT03-ci
@@ -284,6 +284,7 @@ Abrir PR com um teste quebrado de propósito em branch descartável e ver o job 
 - 2026-11-22 · claude · TODO · criada no planejamento inicial
 - 2026-11-22 · codex · IN_PROGRESS · reivindicada
 - 2026-11-22 · codex · REVIEW · CI verde em main com 46 testes em cada versão de Node, typecheck e lint. Cache npm salvo e restaurado. O PR #4 confirmou falha nos jobs Node 20 e 22 e voltou a passar após a reversão. A paridade com o TellusPedia informou divergência em manifest.json como aviso. Validação local completa verde.
+- 2026-11-22 · ayrton · DONE · entrega aprovada no chat e registrada pelo Codex.
 
 ### LD01 · ADR-001: linguagem e tipos
 - **Status**: TODO
