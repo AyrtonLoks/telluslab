@@ -184,7 +184,7 @@ As tarefas LD01–LD05 e LD12 são ADRs: o agente redige as opções com prós, 
 ### Horizonte L0 · Fundação
 
 ### LT01 · AGENTS.md do TellusLab
-- **Status**: IN_PROGRESS
+- **Status**: REVIEW
 - **Responsável**: claude
 - **Revisor**: codex
 - **Branch**: task/LT01-agents-md
@@ -203,9 +203,9 @@ O TellusPedia tem `AGENTS.md` com invariantes técnicos lidos por todos os agent
 Criar `AGENTS.md` na raiz com: stack e comandos, estrutura de pastas, os 12 invariantes da seção 2, protocolo resumido com link para o backlog, portas por agente e regras de commit. Criar `CLAUDE.md` e `GEMINI.md` curtos que apontam para `AGENTS.md`.
 
 **Critérios de aceite**
-- [ ] `AGENTS.md` cobre os 12 invariantes e todos os comandos de `package.json`.
-- [ ] `CLAUDE.md` e `GEMINI.md` apontam para `AGENTS.md` sem duplicar conteúdo.
-- [ ] README ganha link para `AGENTS.md` e para o backlog.
+- [x] `AGENTS.md` cobre os 12 invariantes e todos os comandos de `package.json`.
+- [x] `CLAUDE.md` e `GEMINI.md` apontam para `AGENTS.md` sem duplicar conteúdo.
+- [x] README ganha link para `AGENTS.md` e para o backlog.
 
 **Como verificar**
 Ler os três arquivos; conferir cada comando citado contra `package.json`.
@@ -213,6 +213,7 @@ Ler os três arquivos; conferir cada comando citado contra `package.json`.
 **Log**
 - 2026-11-22 · claude · TODO · criada no planejamento inicial
 - 2026-11-22 · claude · IN_PROGRESS · reivindicada
+- 2026-11-22 · claude · REVIEW · AGENTS.md cobre os 12 invariantes e os 9 scripts do package.json (conferido por script); CLAUDE.md importa AGENTS.md via `@AGENTS.md`, GEMINI.md só aponta; README ganhou seção Contribuir. Registrado também que `bridge:sync`/`bridge:verify` dentro de worktree precisam de `TELLUSPEDIA_REPO`. Validação: 41/41 testes, typecheck, lint e verify:git verdes
 
 ### LT02 · Lint do backlog e `backlog:next`
 - **Status**: TODO
