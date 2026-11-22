@@ -1,6 +1,7 @@
 import { createDomainPacks } from '../packages/learning-core/domain-packs.mjs';
 import { MATH_DIFFICULTIES } from '../packages/learning-core/agenda.mjs';
 import { VERSION, validateRegistry, validateManifest } from '../packages/tellus-bridge/index.mjs';
+import d26 from './bridge-links-d26.json' with {type:'json'};
 
 const inventory = [
   ['MATH','mathematics','Matemática',40,88],
@@ -56,13 +57,20 @@ export function bridgeCatalog(catalogs) {
   const japan = group(['LANG',nums(4,1,3)]);
   const nodeById = new Map(domains.flatMap(domain => domain.nodes.map(node => [node.id,node])));
   const rows = [];
-  function link(kind, key, title, nodes, target = '/') {
+  // Ampliação da D26 (scripts/bridge-links-d26.json): nós acrescentados, na ordem, a vínculos existentes.
+  const extensions = new Map(d26.extend.map(({entityId, nodeIds}) => [entityId, nodeIds]));
+  function link(kind, key, title, baseNodes, target = '/') {
+    const entityId = kind + ':' + key;
+    const nodes = [...baseNodes, ...(extensions.get(entityId) ?? [])];
+    extensions.delete(entityId);
+    if (new Set(nodes).size !== nodes.length) throw new Error('Macrotema repetido no vínculo ' + entityId);
+    if (rows.some(row => row.entityId === entityId)) throw new Error('Vínculo repetido: ' + entityId);
     const bookIds = [...new Set(nodes.flatMap(id => {
       const node = nodeById.get(id);
       if (!node) throw new Error('Macrotema ausente no vínculo ' + id);
       return node.bookIds;
     }))];
-    rows.push({entityId:kind + ':' + key,kind,title,target,nodeIds:nodes,bookIds});
+    rows.push({entityId,kind,title,target,nodeIds:nodes,bookIds});
   }
   const dossier = (key,title,nodes) => link('dossier',key,title,nodes,'/dossies/' + key);
   dossier('astronomia-optica','Astronomia, óptica e telescópios',optics);
@@ -97,6 +105,11 @@ export function bridgeCatalog(catalogs) {
   link('observatory','MARITIME_ROUTES','Rotas marítimas',group(['ECON',['2.3']],['ENG',['2.1','2.3']]));
   link('observatory','NASA_FIRMS','Monitoramento de focos de calor',group(['PHYS',['3.3','4.7']],['ENG',['5.2']]));
   link('observatory','NASA_EONET','Eventos naturais da NASA',group(['MATH',['7.1','7.8']],['ENG',['5.2']]));
+  for (const {entityId, title, target, nodeIds:nodes} of d26.links) {
+    const [kind, key] = entityId.split(/:(.*)/su);
+    link(kind, key, title, nodes, target);
+  }
+  if (extensions.size) throw new Error('Extensão da D26 sem vínculo correspondente: ' + [...extensions.keys()].join(', '));
   const manifest = validateManifest({kind:'TellusCrossLinkManifestV1',schemaVersion:VERSION,links:rows},registry);
   return {registry,manifest};
 }

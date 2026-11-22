@@ -24,7 +24,7 @@ test('inventário integral e namespaces resolvem os DAGs locais e o global', () 
   assert.equal(registry.domains.flatMap(d => d.books).length, 197);
   assert.deepEqual(json('domains/languages/catalog'),json('data/languages'));
   assert.equal(registry.domains[0].books[0].id, 'BIB-MATH-01');
-  assert.equal(validateManifest(manifest,registry).links.length, 31);
+  assert.equal(validateManifest(manifest,registry).links.length, 73);
   for (const mutate of [
     r => r.domains[0].nodes[0].crossPrerequisites.push('DOM-LIT:1.1'),
     r => r.domains[0].nodes[0].prerequisites.push(r.domains[0].nodes[0].id),
