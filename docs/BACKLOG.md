@@ -79,7 +79,7 @@ Validação completa verde · critérios marcados · testes novos para comportam
 
 | Prefixo | Uso | Próximo livre |
 |---|---|---|
-| `LT##` | Engenharia, infraestrutura, motor | LT18 |
+| `LT##` | Engenharia, infraestrutura, motor | LT20 |
 | `LD##` | Design, produto, UX e ADRs | LD13 |
 | `LC##` | Conteúdo pedagógico (lições, exercícios, cartões) | LC09 |
 
@@ -574,9 +574,9 @@ Criar `packages/content-schema/` com `lesson.schema.json`, `exercise.schema.json
 - 2026-11-22 · claude · REVIEW · `packages/content-schema/`: 6 schemas JSON 2020-12 (comum, pack, lição, exercícios com os 8 tipos, cartões, registro de fontes), validador próprio sem dependência que devolve todos os erros com arquivo, linha (front matter, blocos, JSON) e caminho (`exercises[0].answer.correct`), parser do subconjunto de YAML decidido no ADR-003, leitura dos blocos `:::` e checagens de coerência (IDs × diretório, nós do pack, lacunas, opções, permutação, variáveis `{{}}`, gramática de `derived`, `DIF-*` do domínio, `FON-*` no registro, verificação rápida e figura existentes). Tipos em `types.d.mts`/`index.d.mts`, incluídos no `npm run typecheck`; conferido que os dados das fixtures satisfazem os tipos e que um tipo inválido falha. `validateContentPack(dir)`, `loadContentPacks(root)` e `contentFiles(root)`; o build grava `dist/content/index.json` (80 bytes hoje, sem conteúdo) e um `dist/content/<slug>.json` por domínio com conteúdo, precacheados pelo service worker para uso offline e fora do `index.html`. Fixtures em `test/fixtures/content/` geradas dos exemplos do ADR (5 domínios, 8 tipos, lição, cartão simples e par); o teste também valida os blocos direto do ADR para os dois não divergirem. 11 testes novos com 40+ variações inválidas. Validação: 57/57, typecheck, lint e verify:git verdes. Tocou `scripts/build.mjs` (2 linhas) e `package.json` (typecheck), ambos `G-BUILD`, sem tarefa ativa no grupo. `bridge:verify` falha também em `origin/main` (manifesto idêntico antes e depois): aberta a LT17
 
 ### LT08 · `content:lint`
-- **Status**: IN_PROGRESS
+- **Status**: REVIEW
 - **Responsável**: codex
-- **Revisor**: —
+- **Revisor**: claude
 - **Branch**: task/LT08-content-lint
 - **Worktree**: ../telluslab-wt/codex-LT08
 - **Prioridade**: Alta
@@ -590,12 +590,12 @@ Criar `packages/content-schema/` com `lesson.schema.json`, `exercise.schema.json
 Com três agentes escrevendo conteúdo, a qualidade não pode depender só de leitura. Erros comuns: LaTeX que não compila, nó inexistente, fonte sem licença, gabarito errado.
 
 **O que fazer**
-`npm run content:lint` que verifica: schema; IDs únicos; `node` existe no catálogo; todo LaTeX compila no KaTeX; blocos Mermaid são válidos; toda fonte tem licença do registro (ou `BIB-*` existente); exercícios `numeric`, `expression` e `code` têm o gabarito conferido executando o próprio verificador sobre a solução de referência; `review: pending` gera aviso (não erro). Entra no `npm run lint` e no CI.
+`npm run content:lint` que verifica: schema; IDs únicos; `node` existe no catálogo; todo LaTeX compila no KaTeX; blocos Mermaid são válidos; toda fonte tem licença do registro (ou `BIB-*` existente); `review: pending` gera aviso (não erro). Entra no `npm run lint` e no CI. A conferência automática de gabaritos ficou na LT18, que depende dos verificadores de exercício.
 
 **Critérios de aceite**
-- [ ] Cada regra tem teste com caso válido e inválido.
-- [ ] Saída com arquivo, linha e motivo.
-- [ ] Relatório de cobertura: macrotemas com lição, com exercícios e com cartões, por domínio.
+- [x] Cada regra tem teste com caso válido e inválido.
+- [x] Saída com arquivo, linha e motivo.
+- [x] Relatório de cobertura: macrotemas com lição, com exercícios e com cartões, por domínio.
 
 **Como verificar**
 `npm run content:lint` sobre os exemplos do ADR; `npm run content:coverage`.
@@ -603,6 +603,67 @@ Com três agentes escrevendo conteúdo, a qualidade não pode depender só de le
 **Log**
 - 2026-11-22 · claude · TODO · criada no planejamento inicial
 - 2026-11-22 · codex · IN_PROGRESS · reivindicada
+- 2026-11-22 · ayrton · IN_PROGRESS · aprovada no chat a divisão da LT08. Lint e cobertura seguem nesta tarefa; integração com os verificadores de gabaritos passa à LT18.
+- 2026-11-22 · codex · REVIEW · lint e cobertura integrados à CI. Exemplos do ADR válidos com avisos esperados e cobertura dos 8 domínios. Validação: 64 testes no Linux, typecheck, lint e verify:git verdes. A falha preexistente de caminhos no Windows foi registrada na LT19.
+
+### LT18 · Conferir gabaritos do Content Pack no lint
+- **Status**: TODO
+- **Responsável**: —
+- **Revisor**: —
+- **Branch**: —
+- **Worktree**: —
+- **Prioridade**: Alta
+- **Área**: Qualidade de conteúdo
+- **Tamanho**: G
+- **Depende de**: LT08, LT10, LT11, LD04
+- **Grupos**: G-BUILD, G-PRATICA
+- **Afinidade sugerida**: Codex
+
+**Contexto**
+A LT08 valida estrutura e publicação, mas ainda não confere a correção dos gabaritos de exercícios numéricos, expressões e código. A separação permite que a LT05 e os pré-requisitos dos verificadores avancem.
+
+**O que fazer**
+Usar no lint os verificadores de exercício do Lab para testar soluções de referência de tipos `numeric`, `expression` e `code`. Se os motores não estiverem acessíveis ao CLI, expor a API compartilhada. Usar para código o executor isolado definido no LD04. Onde o esquema atual não guardar uma referência independente do gabarito, ajustar o contrato com o formato versionado e a migração correspondente.
+
+**Critérios de aceite**
+- [ ] Uma solução de referência correta passa e uma incorreta falha para cada um dos três tipos.
+- [ ] O lint aproveita os mesmos verificadores usados para corrigir exercícios, inclusive tolerância, equivalência e testes declarados.
+- [ ] Falhas apontam arquivo, linha e exercício; a CI usa o mesmo comando.
+- [ ] Qualquer alteração de formato inclui teste com conteúdo da versão anterior.
+
+**Como verificar**
+Executar `npm run content:lint -- --root test/fixtures/content`, alterar a solução de referência de cada tipo numa cópia e conferir a rejeição.
+
+**Log**
+- 2026-11-22 · codex · TODO · criada pelo desmembramento da LT08, aprovado pelo Ayrton.
+
+### LT19 · Corrigir caminhos da suíte do Content Pack no Windows
+- **Status**: TODO
+- **Responsável**: —
+- **Revisor**: —
+- **Branch**: —
+- **Worktree**: —
+- **Prioridade**: Média
+- **Área**: Qualidade
+- **Tamanho**: P
+- **Depende de**: LT07
+- **Grupos**: G-BUILD
+- **Afinidade sugerida**: Codex
+
+**Contexto**
+Em Windows nativo, `test/content-schema.test.mjs` usa `URL.pathname` para a raiz. A barra anterior à letra da unidade gera um caminho inválido ao abrir o ADR-003 e a suíte falha com ENOENT.
+
+**O que fazer**
+Converter a URL de arquivo para caminho nativo com `fileURLToPath` ao ler o ADR e as fixtures.
+
+**Critérios de aceite**
+- [ ] A suíte acha o ADR-003 e os exemplos no Windows e no Linux.
+
+**Como verificar**
+Executar `node --test test/content-schema.test.mjs` nos dois sistemas.
+
+**Log**
+- 2026-11-22 · codex · TODO · falha encontrada na validação da LT08.
 
 ### LT09 · Leitor de lição
 - **Status**: TODO
