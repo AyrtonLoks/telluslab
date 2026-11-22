@@ -573,11 +573,11 @@ Criar `packages/content-schema/` com `lesson.schema.json`, `exercise.schema.json
 - 2026-11-22 · claude · REVIEW · `packages/content-schema/`: 6 schemas JSON 2020-12 (comum, pack, lição, exercícios com os 8 tipos, cartões, registro de fontes), validador próprio sem dependência que devolve todos os erros com arquivo, linha (front matter, blocos, JSON) e caminho (`exercises[0].answer.correct`), parser do subconjunto de YAML decidido no ADR-003, leitura dos blocos `:::` e checagens de coerência (IDs × diretório, nós do pack, lacunas, opções, permutação, variáveis `{{}}`, gramática de `derived`, `DIF-*` do domínio, `FON-*` no registro, verificação rápida e figura existentes). Tipos em `types.d.mts`/`index.d.mts`, incluídos no `npm run typecheck`; conferido que os dados das fixtures satisfazem os tipos e que um tipo inválido falha. `validateContentPack(dir)`, `loadContentPacks(root)` e `contentFiles(root)`; o build grava `dist/content/index.json` (80 bytes hoje, sem conteúdo) e um `dist/content/<slug>.json` por domínio com conteúdo, precacheados pelo service worker para uso offline e fora do `index.html`. Fixtures em `test/fixtures/content/` geradas dos exemplos do ADR (5 domínios, 8 tipos, lição, cartão simples e par); o teste também valida os blocos direto do ADR para os dois não divergirem. 11 testes novos com 40+ variações inválidas. Validação: 57/57, typecheck, lint e verify:git verdes. Tocou `scripts/build.mjs` (2 linhas) e `package.json` (typecheck), ambos `G-BUILD`, sem tarefa ativa no grupo. `bridge:verify` falha também em `origin/main` (manifesto idêntico antes e depois): aberta a LT17
 
 ### LT08 · `content:lint`
-- **Status**: TODO
-- **Responsável**: —
+- **Status**: IN_PROGRESS
+- **Responsável**: codex
 - **Revisor**: —
-- **Branch**: —
-- **Worktree**: —
+- **Branch**: task/LT08-content-lint
+- **Worktree**: ../telluslab-wt/codex-LT08
 - **Prioridade**: Alta
 - **Área**: Qualidade de conteúdo
 - **Tamanho**: M
@@ -601,6 +601,7 @@ Com três agentes escrevendo conteúdo, a qualidade não pode depender só de le
 
 **Log**
 - 2026-11-22 · claude · TODO · criada no planejamento inicial
+- 2026-11-22 · codex · IN_PROGRESS · reivindicada
 
 ### LT09 · Leitor de lição
 - **Status**: TODO
