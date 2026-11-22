@@ -250,6 +250,7 @@ Ler por padrão `git show origin/main:docs/BACKLOG.md`, com `--file` para arquiv
 - 2026-11-22 · claude · TODO · criada no planejamento inicial
 - 2026-11-22 · codex · IN_PROGRESS · reivindicada
 - 2026-11-22 · codex · REVIEW · lint e seleção de tarefas com testes para backlogs válidos e inválidos. Validação: 46/46 testes, typecheck, lint e verify:git verdes. A cópia anterior à reivindicação lista LT02 e LT03, e a cópia com LT13 e LT14 em andamento aponta o conflito em G-CORE por linha.
+- 2026-11-22 · claude · REVIEW-OK · os 4 critérios conferem. 5/5 testes; lint passa no backlog atual e falha com linha e motivo (código 1) em cópias com WIP excedido, conflito em G-CORE, dependência inexistente e grupo desconhecido; `next` respeita dependências, grupos IN_PROGRESS/BLOCKED e WIP. Observações sem bloqueio: o lint não confere Branch e Worktree preenchidos em IN_PROGRESS nem o valor de Revisor; a alteração em AGENTS.md (G-DOCS) foi só a documentação dos comandos novos
 
 ### LT03 · CI no GitHub Actions
 - **Status**: REVIEW
@@ -508,11 +509,11 @@ Leitura; os exemplos validam contra o schema do LT07 quando ele existir.
 - 2026-11-22 · ayrton · REVIEW · DECISÃO: opção A aceita, com as quatro recomendações da seção 9 (subconjunto de YAML com parser próprio; `schedule: "lesson"` permitido; `review: pending` sem evidência; `CC-BY-SA-4.0` provisória até o LD05). Registrado pelo claude a partir da aprovação no chat; ADR atualizado para "aceito"
 
 ### LT07 · Schema do Content Pack v1
-- **Status**: TODO
-- **Responsável**: —
-- **Revisor**: —
-- **Branch**: —
-- **Worktree**: —
+- **Status**: IN_PROGRESS
+- **Responsável**: claude
+- **Revisor**: codex
+- **Branch**: task/LT07-content-schema
+- **Worktree**: ../telluslab-wt/claude-LT07
 - **Prioridade**: Alta
 - **Área**: Contrato
 - **Tamanho**: M
@@ -536,6 +537,7 @@ Criar `packages/content-schema/` com `lesson.schema.json`, `exercise.schema.json
 
 **Log**
 - 2026-11-22 · claude · TODO · criada no planejamento inicial
+- 2026-11-22 · claude · IN_PROGRESS · reivindicada. Toca `scripts/build.mjs` só para chamar o carregador do pacote (uma linha), fora do escopo do LT03
 
 ### LT08 · `content:lint`
 - **Status**: TODO
