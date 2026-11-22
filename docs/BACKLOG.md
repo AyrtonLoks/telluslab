@@ -216,7 +216,7 @@ Ler os três arquivos; conferir cada comando citado contra `package.json`.
 - 2026-11-22 · claude · REVIEW · AGENTS.md cobre os 12 invariantes e os 9 scripts do package.json (conferido por script); CLAUDE.md importa AGENTS.md via `@AGENTS.md`, GEMINI.md só aponta; README ganhou seção Contribuir. Registrado também que `bridge:sync`/`bridge:verify` dentro de worktree precisam de `TELLUSPEDIA_REPO`. Validação: 41/41 testes, typecheck, lint e verify:git verdes
 
 ### LT02 · Lint do backlog e `backlog:next`
-- **Status**: IN_PROGRESS
+- **Status**: REVIEW
 - **Responsável**: codex
 - **Revisor**: claude
 - **Branch**: task/LT02-backlog
@@ -238,10 +238,10 @@ No TellusPedia a escolha de tarefa e a checagem de conflitos eram manuais. Com t
 Ler por padrão `git show origin/main:docs/BACKLOG.md`, com `--file` para arquivo local.
 
 **Critérios de aceite**
-- [ ] O lint aponta linha e motivo de cada erro e sai com código ≠ 0.
-- [ ] `backlog:next` respeita dependências, grupos e WIP.
-- [ ] Testes em `test/backlog.test.mjs` com backlogs de exemplo válidos e inválidos.
-- [ ] `backlog:lint` roda dentro de `npm run lint`.
+- [x] O lint aponta linha e motivo de cada erro e sai com código ≠ 0.
+- [x] `backlog:next` respeita dependências, grupos e WIP.
+- [x] Testes em `test/backlog.test.mjs` com backlogs de exemplo válidos e inválidos.
+- [x] `backlog:lint` roda dentro de `npm run lint`.
 
 **Como verificar**
 `npm run backlog:lint` passa neste arquivo; criar uma cópia com dois `IN_PROGRESS` em `G-CORE` e ver o erro; `npm run backlog:next -- --agent codex` lista LT02/LT03 enquanto estiverem livres.
@@ -249,6 +249,7 @@ Ler por padrão `git show origin/main:docs/BACKLOG.md`, com `--file` para arquiv
 **Log**
 - 2026-11-22 · claude · TODO · criada no planejamento inicial
 - 2026-11-22 · codex · IN_PROGRESS · reivindicada
+- 2026-11-22 · codex · REVIEW · lint e seleção de tarefas com testes para backlogs válidos e inválidos. Validação: 46/46 testes, typecheck, lint e verify:git verdes. A cópia anterior à reivindicação lista LT02 e LT03, e a cópia com LT13 e LT14 em andamento aponta o conflito em G-CORE por linha.
 
 ### LT03 · CI no GitHub Actions
 - **Status**: TODO
